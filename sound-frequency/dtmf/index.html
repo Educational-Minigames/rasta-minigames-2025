@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sound Crop FFT</title>
+  <style>
+    :root {
+      --primary: #007aff;
+      --primary-hover: #005dc7;
+      --secondary: #34c759;
+      --background: #0d1117;
+      --surface: #161b22;
+      --surface-hover: #21262d;
+      --border: #30363d;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --waveform: #58a6ff;
+      --spectrum: #f85149;
+      --selection: rgba(88, 166, 255, 0.2);
+      --handle: #58a6ff;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      --shadow-small: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--background) 0%, #0a0e13 100%);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 32px 0;
+      text-align: center;
+      background: linear-gradient(135deg, var(--waveform), var(--spectrum));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 4px 8px rgba(88, 166, 255, 0.3);
+    }
+
+    .visualization-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    .visualization-section:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow), 0 0 32px rgba(88, 166, 255, 0.1);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 4px;
+      height: 18px;
+      background: linear-gradient(135deg, var(--waveform), var(--spectrum));
+      border-radius: 2px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(135deg, #0a0e13 0%, #161b22 100%);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    canvas:hover {
+      border-color: var(--primary);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 122, 255, 0.2);
+    }
+
+    #intervalBar {
+      height: 80px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    #intervalBar:hover {
+      border-color: var(--secondary);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin: 16px 0;
+      padding: 16px;
+      background: var(--surface-hover);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .time-display {
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      min-width: 160px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0;
+    }
+
+    .time-label {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .time-value {
+      color: var(--waveform);
+      font-weight: 600;
+    }
+
+    .instruction {
+      flex: 1;
+      color: var(--text-muted);
+      font-size: 14px;
+      background: linear-gradient(90deg, var(--text-muted), var(--text-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .transform-section {
+      text-align: center;
+      margin: 32px 0;
+    }
+
+    button {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-small);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0, 122, 255, 0.4);
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      background: var(--surface-hover);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    button:disabled::before {
+      display: none;
+    }
+
+    .loading-indicator {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--text-muted);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .play-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .play-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--secondary), #28a745);
+      color: white;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-small);
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .play-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(52, 199, 89, 0.4);
+    }
+
+    .play-btn:active {
+      transform: scale(0.95);
+    }
+
+    .play-btn:disabled {
+      background: var(--surface-hover);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .play-bar-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .play-bar {
+      height: 8px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .play-progress {
+      height: 100%;
+      background: linear-gradient(90deg, var(--secondary), #00d4aa);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.1s ease;
+      box-shadow: 0 0 8px rgba(52, 199, 89, 0.3);
+    }
+
+    .play-handle {
+      width: 16px;
+      height: 16px;
+      background: var(--secondary);
+      border: 2px solid white;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .play-handle:hover {
+      transform: translate(-50%, -50%) scale(1.2);
+      box-shadow: 0 4px 16px rgba(52, 199, 89, 0.4);
+    }
+
+    .time-indicators {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .spectrum-container {
+      position: relative;
+    }
+
+    .frequency-tooltip {
+      position: absolute;
+      background: rgba(22, 27, 34, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      color: var(--text-primary);
+      pointer-events: none;
+      z-index: 1000;
+      box-shadow: var(--shadow-small);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .frequency-tooltip.visible {
+      opacity: 1;
+    }
+
+    .tooltip-freq {
+      color: var(--spectrum);
+      font-weight: 600;
+    }
+
+    .tooltip-mag {
+      color: var(--waveform);
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      h3 {
+        font-size: 24px;
+        margin-bottom: 24px;
+      }
+
+      .visualization-section {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      canvas {
+        height: 140px;
+      }
+
+      #intervalBar {
+        height: 60px;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .time-display {
+        min-width: auto;
+      }
+
+      button {
+        padding: 14px 24px;
+        font-size: 15px;
+      }
+
+      .play-controls {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .play-bar-container {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .section-title {
+        font-size: 16px;
+      }
+
+      canvas {
+        height: 120px;
+      }
+
+      #intervalBar {
+        height: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>Sound Crop → FFT</h3>
+
+    <!-- Waveform Section -->
+    <div class="visualization-section">
+      <div class="section-title">📊 Audio Waveform</div>
+      <canvas id="plot1"></canvas>
+      <div class="play-controls" id="playControls" style="display: none;">
+        <button class="play-btn" id="playBtn">▶️</button>
+        <div class="play-bar-container">
+          <div class="play-bar" id="playBar">
+            <div class="play-progress" id="playProgress"></div>
+            <div class="play-handle" id="playHandle"></div>
+          </div>
+          <div class="time-indicators">
+            <span class="current-time" id="currentTime">0:00</span>
+            <span class="total-time" id="totalTime">0:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selection Section -->
+    <div class="visualization-section">
+      <div class="section-title">✂️ Time Selection</div>
+      <canvas id="intervalBar"></canvas>
+      <div class="controls">
+        <div class="time-display">
+          <div class="time-row">
+            <span class="time-label">Start:</span>
+            <span class="time-value"><span id="tStart">0.00</span> s</span>
+          </div>
+          <div class="time-row">
+            <span class="time-label">End:</span>
+            <span class="time-value"><span id="tEnd">0.00</span> s</span>
+          </div>
+        </div>
+        <div class="instruction">
+          💡 Drag the blue handles on the interval bar to select a time segment for frequency analysis.
+        </div>
+      </div>
+    </div>
+
+    <!-- Transform Section -->
+    <div class="transform-section">
+      <button id="transformBtn" disabled>
+        <span id="btnText">🔄 Transform Selected Segment → FFT</span>
+      </button>
+    </div>
+
+    <!-- Spectrum Section -->
+    <div class="visualization-section">
+      <div class="section-title">🌈 Frequency Spectrum</div>
+      <div class="spectrum-container">
+        <canvas id="plot2"></canvas>
+        <div class="frequency-tooltip" id="frequencyTooltip">
+          <div>Frequency: <span class="tooltip-freq" id="tooltipFreq">0 Hz</span></div>
+          <div>Magnitude: <span class="tooltip-mag" id="tooltipMag">0.00</span></div>
+        </div>
+      </div>
+      <div class="stats" id="spectrumStats" style="display: none;">
+        <div class="stat-card">
+          <span class="stat-value" id="peakFreq">--</span>
+          <span class="stat-label">Peak Frequency</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="bandwidth">--</span>
+          <span class="stat-label">Bandwidth</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // --- configuration ---
+  const SOUND_URL = 'sound.wav'; // place sound.wav next to this index.html
+  const MAX_FREQUENCY = 2000; // Maximum frequency to display in Hz (adjust as needed)
+
+  // canvas elements
+  const plot1 = document.getElementById('plot1');
+  const intervalBar = document.getElementById('intervalBar');
+  const plot2 = document.getElementById('plot2');
+  const tStartEl = document.getElementById('tStart');
+  const tEndEl = document.getElementById('tEnd');
+  const transformBtn = document.getElementById('transformBtn');
+  const btnText = document.getElementById('btnText');
+
+  // logical state
+  let audioCtx;
+  let audioBuffer = null;
+  let mono = null; // Float32Array of mono audio
+  let sampleRate = 44100;
+  let selection = { start: 0, end: 0 }; // seconds
+
+  // adaptive canvas sizing for high DPI
+  function fitCanvas(canvas) {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return ctx;
+  }
+
+  // draw waveform on a canvas (optionally downsample to width)
+  function drawWaveform(canvas, data, color='#58a6ff', fill=false, highlightRange=null) {
+    const ctx = fitCanvas(canvas);
+    const w = canvas.clientWidth; const h = canvas.clientHeight;
+    
+    // Clear with gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, '#0a0e13');
+    gradient.addColorStop(1, '#161b22');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0,0,w,h);
+    
+    // Draw grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = (i / 4) * h;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    
+    ctx.lineWidth = 2; 
+    ctx.strokeStyle = color; 
+    ctx.beginPath();
+    const N = data.length;
+    const step = Math.max(1, Math.floor(N / w));
+    
+    // draw envelope (min/max per pixel) with glow effect
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 4;
+    
+    for (let x=0; x<w; x++){
+      const i0 = Math.floor(x * N / w);
+      let min = 1e9, max = -1e9;
+      for (let i=i0; i< Math.min(N, i0+step); i++){ 
+        const v = data[i]; 
+        if (v<min) min=v; 
+        if (v>max) max=v; 
+      }
+      const y1 = (1 - (max+1)/2) * h; // normalize -1..1 to canvas
+      const y2 = (1 - (min+1)/2) * h;
+      ctx.moveTo(x, y1); 
+      ctx.lineTo(x, y2);
+    }
+    ctx.stroke();
+    
+    // Reset shadow
+    ctx.shadowBlur = 0;
+    
+    if (highlightRange) {
+      // highlight segment as translucent overlay with animated border
+      const [s,e] = highlightRange; // sample indices
+      const xs = (s/N)*w, xe = (e/N)*w;
+      
+      const highlightGradient = ctx.createLinearGradient(xs, 0, xe, 0);
+      highlightGradient.addColorStop(0, 'rgba(88, 166, 255, 0.1)');
+      highlightGradient.addColorStop(0.5, 'rgba(88, 166, 255, 0.2)');
+      highlightGradient.addColorStop(1, 'rgba(88, 166, 255, 0.1)');
+      
+      ctx.fillStyle = highlightGradient;
+      ctx.fillRect(xs,0,xe-xs,h);
+      
+      // Animated border
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.lineDashOffset = -(Date.now() / 100) % 10;
+      ctx.strokeRect(xs, 0, xe-xs, h);
+      ctx.setLineDash([]);
+    }
+  }
+
+  // ===== simple iterative FFT (radix-2) =====
+  function nextPow2(v){ let p=1; while(p<v) p<<=1; return p; }
+
+  function fft(real, imag) {
+    const n = real.length;
+    if (n <= 1) return;
+    const levels = Math.floor(Math.log2(n));
+    if ((1<<levels) !== n) throw new Error('Length must be power of 2');
+    // bit-reverse
+    for (let i=0; i<n; i++){
+      let j = 0, bit = i;
+      for (let k=0; k<levels; k++){ j = (j<<1) | (bit & 1); bit >>= 1; }
+      if (j > i){ [real[i], real[j]] = [real[j], real[i]]; [imag[i], imag[j]] = [imag[j], imag[i]]; }
+    }
+    // Cooley-Tukey
+    for (let size = 2; size <= n; size <<= 1) {
+      const half = size >> 1;
+      const theta = -2 * Math.PI / size;
+      const wpr = Math.cos(theta);
+      const wpi = Math.sin(theta);
+      for (let i=0; i<n; i += size) {
+        let wr = 1, wi = 0;
+        for (let j=0; j<half; j++){
+          const k = i + j;
+          const l = k + half;
+          const tr = wr * real[l] - wi * imag[l];
+          const ti = wr * imag[l] + wi * real[l];
+          real[l] = real[k] - tr; imag[l] = imag[k] - ti;
+          real[k] += tr; imag[k] += ti;
+          // update wr,wi using complex multiply by w = cos + i sin
+          const tmp = wr;
+          wr = tmp * wpr - wi * wpi;
+          wi = tmp * wpi + wi * wpr;
+        }
+      }
+    }
+  }
+
+  // compute magnitude spectrum from time samples (mono Float32Array)
+  function computeSpectrum(samples, rate) {
+    const N0 = samples.length;
+    const N = nextPow2(N0);
+    const real = new Array(N).fill(0);
+    const imag = new Array(N).fill(0);
+    for (let i=0; i<N0; i++) real[i] = samples[i];
+    fft(real, imag);
+    const half = N/2;
+    const mags = new Float32Array(half);
+    for (let k=0; k<half; k++){
+      mags[k] = Math.sqrt(real[k]*real[k] + imag[k]*imag[k]);
+    }
+    // normalize magnitude (simple)
+    let max = 0; for (let i=0;i<half;i++) if (mags[i]>max) max=mags[i];
+    if (max>0) for (let i=0;i<half;i++) mags[i] /= max;
+    const freqs = new Float32Array(half);
+    for (let k=0;k<half;k++) freqs[k] = k * rate / N;
+    return { freqs, mags };
+  }
+
+  // Global spectrum data for tooltip
+  let currentSpectrumData = { freqs: null, mags: null, maxDisplayFreq: 0 };
+
+  // plot spectrum into canvas (log/linear combined)
+  function drawSpectrum(canvas, freqs, mags) {
+    const ctx = fitCanvas(canvas);
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    
+    // Store current spectrum data for tooltip
+    const maxDisplayFreq = Math.min(MAX_FREQUENCY, freqs[freqs.length-1]);
+    currentSpectrumData = { freqs, mags, maxDisplayFreq };
+    
+    // Clear with gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, '#0a0e13');
+    gradient.addColorStop(1, '#161b22');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0,0,w,h);
+    
+    // Draw vertical grid lines and frequency labels
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    
+    // Calculate tick spacing for frequency axis
+    const numTicks = 8;
+    const tickSpacing = maxDisplayFreq / numTicks;
+    const niceTickSpacing = Math.pow(10, Math.floor(Math.log10(tickSpacing)));
+    const tickMultiplier = Math.ceil(tickSpacing / niceTickSpacing);
+    const finalTickSpacing = niceTickSpacing * tickMultiplier;
+    
+    for (let freq = 0; freq <= maxDisplayFreq; freq += finalTickSpacing) {
+      const x = (freq / maxDisplayFreq) * w;
+      
+      // Draw grid line
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+      
+      // Draw frequency label
+      const freqLabel = freq >= 1000 ? `${(freq/1000).toFixed(1)}k` : `${freq.toFixed(0)}`;
+      ctx.fillText(freqLabel, x, 15);
+    }
+    
+    // Draw horizontal grid lines and magnitude labels
+    ctx.textAlign = 'left';
+    for (let i = 1; i < 4; i++) {
+      const y = (i / 4) * h;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    
+    ctx.textAlign = 'start';
+    
+    // Draw spectrum with gradient fill, limited to MAX_FREQUENCY
+    ctx.strokeStyle = '#f85149'; 
+    ctx.lineWidth = 2; 
+    ctx.beginPath();
+    
+    const N = mags.length;
+    const points = [];
+    
+    for (let x=0; x<w; x++){
+      // map x to frequency (linear, limited to MAX_FREQUENCY)
+      const f = x/w * maxDisplayFreq;
+      // find nearest index
+      const idx = Math.min(N-1, Math.round(f / freqs[freqs.length-1] * (N-1)));
+      const m = mags[idx];
+      const y = (1 - m) * h;
+      points.push({x, y});
+      if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    
+    // Glow effect
+    ctx.shadowColor = '#f85149';
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Fill area under curve
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    
+    const fillGradient = ctx.createLinearGradient(0, 0, 0, h);
+    fillGradient.addColorStop(0, 'rgba(248, 81, 73, 0.3)');
+    fillGradient.addColorStop(1, 'rgba(248, 81, 73, 0.05)');
+    ctx.fillStyle = fillGradient;
+    ctx.fill();
+    
+    // Update spectrum stats
+    updateSpectrumStats(freqs, mags, maxDisplayFreq);
+    
+    // draw axis labels with frequency range
+    ctx.fillStyle = '#6e7681'; 
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(`Frequency (Hz)`, 12, 16);
+    ctx.save();
+    ctx.translate(8, h/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText('Magnitude', 0, 0);
+    ctx.restore();
+  }
+
+  function updateSpectrumStats(freqs, mags, maxDisplayFreq) {
+    // Find peak frequency within the display range
+    let peakIdx = 0;
+    let peakMag = 0;
+    const maxIdx = Math.min(mags.length, Math.round(maxDisplayFreq / freqs[freqs.length-1] * (mags.length-1)));
+    
+    for (let i = 0; i < maxIdx; i++) {
+      if (mags[i] > peakMag) {
+        peakMag = mags[i];
+        peakIdx = i;
+      }
+    }
+    
+    const peakFreq = freqs[peakIdx];
+    document.getElementById('peakFreq').textContent = peakFreq.toFixed(1) + ' Hz';
+    
+    // Calculate bandwidth (frequency range where magnitude > 10% of peak) within display range
+    const threshold = peakMag * 0.1;
+    let minFreq = maxDisplayFreq;
+    let maxFreq = 0;
+    
+    for (let i = 0; i < maxIdx; i++) {
+      if (mags[i] > threshold) {
+        minFreq = Math.min(minFreq, freqs[i]);
+        maxFreq = Math.max(maxFreq, freqs[i]);
+      }
+    }
+    
+    const bandwidth = maxFreq - minFreq;
+    document.getElementById('bandwidth').textContent = bandwidth.toFixed(1) + ' Hz';
+    
+    document.getElementById('spectrumStats').style.display = 'grid';
+  }
+
+  // --- interval bar with draggable handles ---
+  const ibCtx = intervalBar.getContext('2d');
+  let dragging = null; // 'start'|'end'|null
+  
+  function renderIntervalBar(){
+    fitCanvas(intervalBar);
+    const w = intervalBar.clientWidth, h = intervalBar.clientHeight;
+    
+    // Clear with gradient
+    const gradient = ibCtx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, '#0a0e13');
+    gradient.addColorStop(1, '#161b22');
+    ibCtx.fillStyle = gradient;
+    ibCtx.fillRect(0,0,w,h);
+    
+    // draw full waveform smaller
+    if (mono) {
+      // draw as thin envelope
+      ibCtx.strokeStyle = '#34c759'; 
+      ibCtx.lineWidth = 1.5; 
+      ibCtx.beginPath();
+      const N = mono.length; 
+      const step = Math.max(1, Math.floor(N / w));
+      
+      for (let x=0;x<w;x++){
+        const i0 = Math.floor(x * N / w);
+        let min=1e9,max=-1e9;
+        for (let i=i0;i<Math.min(N,i0+step);i++){ 
+          const v=mono[i]; 
+          if (v<min) min=v; 
+          if (v>max) max=v; 
+        }
+        const y1 = (1 - (max+1)/2) * h; 
+        const y2 = (1 - (min+1)/2) * h;
+        ibCtx.moveTo(x,y1); 
+        ibCtx.lineTo(x,y2);
+      }
+      ibCtx.stroke();
+      
+      // draw selection overlay with gradient
+      const startX = (selection.start / audioBuffer.duration) * w;
+      const endX = (selection.end / audioBuffer.duration) * w;
+      
+      const selectionGradient = ibCtx.createLinearGradient(startX, 0, endX, 0);
+      selectionGradient.addColorStop(0, 'rgba(88, 166, 255, 0.15)');
+      selectionGradient.addColorStop(0.5, 'rgba(88, 166, 255, 0.25)');
+      selectionGradient.addColorStop(1, 'rgba(88, 166, 255, 0.15)');
+      
+      ibCtx.fillStyle = selectionGradient;
+      ibCtx.fillRect(startX, 0, endX - startX, h);
+      
+      // Enhanced handles with glow
+      const hr = 8;
+      ibCtx.shadowColor = '#58a6ff';
+      ibCtx.shadowBlur = 8;
+      
+      // Start handle
+      ibCtx.fillStyle = '#58a6ff';
+      ibCtx.beginPath();
+      ibCtx.arc(startX, h/2, hr, 0, Math.PI*2);
+      ibCtx.fill();
+      
+      // End handle
+      ibCtx.beginPath();
+      ibCtx.arc(endX, h/2, hr, 0, Math.PI*2);
+      ibCtx.fill();
+      
+      ibCtx.shadowBlur = 0;
+      
+      // Handle labels
+      ibCtx.fillStyle = '#f0f6fc';
+      ibCtx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ibCtx.textAlign = 'center';
+      ibCtx.fillText('START', startX, h - 8);
+      ibCtx.fillText('END', endX, h - 8);
+      ibCtx.textAlign = 'start';
+      
+    } else {
+      ibCtx.fillStyle = '#30363d'; 
+      ibCtx.fillRect(0,0,w,h);
+      ibCtx.fillStyle = '#6e7681';
+      ibCtx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ibCtx.textAlign = 'center';
+      ibCtx.fillText('Loading audio...', w/2, h/2);
+      ibCtx.textAlign = 'start';
+    }
+    
+    tStartEl.textContent = selection.start.toFixed(2);
+    tEndEl.textContent = selection.end.toFixed(2);
+  }
+
+  function canvasToTime(x){
+    const rect = intervalBar.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+    return pos * audioBuffer.duration;
+  }
+
+  intervalBar.addEventListener('pointerdown', (ev)=>{
+    if (!audioBuffer) return;
+    ev.preventDefault(); intervalBar.setPointerCapture(ev.pointerId);
+    const rect = intervalBar.getBoundingClientRect();
+    const x = ev.clientX - rect.left;
+    const startX = (selection.start / audioBuffer.duration) * rect.width;
+    const endX = (selection.end / audioBuffer.duration) * rect.width;
+    if (Math.abs(x - startX) < 15) dragging = 'start';
+    else if (Math.abs(x - endX) < 15) dragging = 'end';
+    else {
+      // click to move nearest handle
+      const mid = (startX + endX) / 2;
+      dragging = (x < mid) ? 'start' : 'end';
+      if (dragging === 'start') selection.start = canvasToTime(ev.clientX);
+      else selection.end = canvasToTime(ev.clientX);
+      if (selection.start > selection.end) [selection.start, selection.end] = [selection.end, selection.start];
+      renderIntervalBar();
+    }
+  });
+
+  window.addEventListener('pointermove', (ev)=>{
+    if (!dragging) return; if (!audioBuffer) return;
+    const t = canvasToTime(ev.clientX);
+    if (dragging === 'start') selection.start = Math.max(0, Math.min(t, selection.end - 0.001));
+    else selection.end = Math.min(audioBuffer.duration, Math.max(t, selection.start + 0.001));
+    renderIntervalBar();
+  });
+  window.addEventListener('pointerup', (ev)=>{ if (dragging) dragging=null; });
+
+  // Audio playback state
+  let audioSource = null;
+  let isPlaying = false;
+  let playStartTime = 0;
+  let playOffset = 0;
+  let animationFrame = null;
+
+  const playBtn = document.getElementById('playBtn');
+  const playBar = document.getElementById('playBar');
+  const playProgress = document.getElementById('playProgress');
+  const playHandle = document.getElementById('playHandle');
+  const currentTime = document.getElementById('currentTime');
+  const totalTime = document.getElementById('totalTime');
+  const frequencyTooltip = document.getElementById('frequencyTooltip');
+  const tooltipFreq = document.getElementById('tooltipFreq');
+  const tooltipMag = document.getElementById('tooltipMag');
+
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  function updatePlayProgress() {
+    if (!audioBuffer || !isPlaying) return;
+    
+    const elapsed = (audioCtx.currentTime - playStartTime + playOffset);
+    const duration = audioBuffer.duration;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    playProgress.style.width = `${progress * 100}%`;
+    playHandle.style.left = `${progress * 100}%`;
+    currentTime.textContent = formatTime(elapsed);
+    
+    if (progress >= 1) {
+      stopPlayback();
+    } else {
+      animationFrame = requestAnimationFrame(updatePlayProgress);
+    }
+  }
+
+  function startPlayback(startTime = 0) {
+    if (!audioBuffer || isPlaying) return;
+    
+    try {
+      audioSource = audioCtx.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.connect(audioCtx.destination);
+      
+      playStartTime = audioCtx.currentTime;
+      playOffset = startTime;
+      audioSource.start(0, startTime);
+      
+      isPlaying = true;
+      playBtn.textContent = '⏸️';
+      updatePlayProgress();
+      
+      audioSource.onended = () => {
+        if (isPlaying) stopPlayback();
+      };
+      
+    } catch (err) {
+      console.error('Playback error:', err);
+      stopPlayback();
+    }
+  }
+
+  function stopPlayback() {
+    if (audioSource) {
+      try {
+        audioSource.stop();
+      } catch (err) {
+        // Audio might already be stopped
+      }
+      audioSource = null;
+    }
+    
+    isPlaying = false;
+    playBtn.textContent = '▶️';
+    
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+  }
+
+  function seekTo(position) {
+    const wasPlaying = isPlaying;
+    stopPlayback();
+    
+    const duration = audioBuffer.duration;
+    const seekTime = position * duration;
+    
+    playProgress.style.width = `${position * 100}%`;
+    playHandle.style.left = `${position * 100}%`;
+    currentTime.textContent = formatTime(seekTime);
+    
+    if (wasPlaying) {
+      startPlayback(seekTime);
+    } else {
+      playOffset = seekTime;
+    }
+  }
+
+  // Play button click handler
+  playBtn.addEventListener('click', () => {
+    if (!audioBuffer) return;
+    
+    if (isPlaying) {
+      stopPlayback();
+    } else {
+      startPlayback(playOffset);
+    }
+  });
+
+  // Play bar interaction
+  let isDragging = false;
+  
+  playBar.addEventListener('pointerdown', (ev) => {
+    if (!audioBuffer) return;
+    ev.preventDefault();
+    isDragging = true;
+    playBar.setPointerCapture(ev.pointerId);
+    
+    const rect = playBar.getBoundingClientRect();
+    const position = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+    seekTo(position);
+  });
+
+  window.addEventListener('pointermove', (ev) => {
+    if (!isDragging || !audioBuffer) return;
+    
+    const rect = playBar.getBoundingClientRect();
+    const position = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+    seekTo(position);
+  });
+
+  window.addEventListener('pointerup', () => {
+    isDragging = false;
+  });
+
+  // Spectrum plot tooltip functionality
+  plot2.addEventListener('mousemove', (ev) => {
+    if (!currentSpectrumData.freqs || !currentSpectrumData.mags) return;
+    
+    const rect = plot2.getBoundingClientRect();
+    const x = ev.clientX - rect.left;
+    const y = ev.clientY - rect.top;
+    
+    // Calculate frequency and magnitude at mouse position
+    const frequency = (x / rect.width) * currentSpectrumData.maxDisplayFreq;
+    const magnitude = 1 - (y / rect.height);
+    
+    // Find actual magnitude value at this frequency
+    const N = currentSpectrumData.mags.length;
+    const idx = Math.min(N-1, Math.round(frequency / currentSpectrumData.freqs[currentSpectrumData.freqs.length-1] * (N-1)));
+    const actualMagnitude = currentSpectrumData.mags[idx] || 0;
+    
+    // Update tooltip content
+    tooltipFreq.textContent = `${frequency.toFixed(1)} Hz`;
+    tooltipMag.textContent = actualMagnitude.toFixed(3);
+    
+    // Position tooltip near mouse cursor
+    const tooltipX = Math.min(rect.width - 140, Math.max(10, x + 15));
+    const tooltipY = Math.min(rect.height - 50, Math.max(10, y - 10));
+    
+    frequencyTooltip.style.left = `${tooltipX}px`;
+    frequencyTooltip.style.top = `${tooltipY}px`;
+    frequencyTooltip.classList.add('visible');
+  });
+
+  plot2.addEventListener('mouseleave', () => {
+    frequencyTooltip.classList.remove('visible');
+  });
+
+  // --- load audio file and initialize ---
+  async function loadAudio(){
+    transformBtn.disabled = true;
+    btnText.innerHTML = '<div class="loading-indicator"></div>Loading audio...';
+    
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const res = await fetch(SOUND_URL);
+      if (!res.ok) throw new Error('Failed to fetch ' + SOUND_URL);
+      const ab = await res.arrayBuffer();
+      audioBuffer = await audioCtx.decodeAudioData(ab);
+      sampleRate = audioBuffer.sampleRate;
+      
+      // mixdown to mono
+      const ch = audioBuffer.numberOfChannels;
+      const L = audioBuffer.length;
+      mono = new Float32Array(L);
+      for (let i=0;i<L;i++){
+        let s=0; for (let c=0;c<ch;c++) s += audioBuffer.getChannelData(c)[i];
+        mono[i] = s / ch;
+      }
+      
+      // initial selection: whole file
+      selection.start = 0; selection.end = audioBuffer.duration;
+      
+      // draw plot1 waveform
+      drawWaveform(plot1, mono, '#58a6ff', true, null);
+      renderIntervalBar();
+      
+      // Setup play controls
+      totalTime.textContent = formatTime(audioBuffer.duration);
+      currentTime.textContent = formatTime(0);
+      playProgress.style.width = '0%';
+      playHandle.style.left = '0%';
+      document.getElementById('playControls').style.display = 'flex';
+      
+      // compute full spectrum and plot in plot2
+      const spec = computeSpectrum(mono, sampleRate);
+      drawSpectrum(plot2, spec.freqs, spec.mags);
+      
+      transformBtn.disabled = false;
+      btnText.textContent = '🔄 Transform Selected Segment → FFT';
+      
+    } catch (err) {
+      console.error(err); 
+      alert('Error loading audio: ' + err.message + '\n\nMake sure sound.wav is in the same directory as this HTML file.');
+      btnText.textContent = '❌ Failed to load audio';
+    }
+  }
+
+  transformBtn.addEventListener('click', ()=>{
+    if (!mono || !audioBuffer) return;
+    
+    btnText.textContent = '🔄 Processing...';
+    transformBtn.disabled = true;
+    
+    // Use setTimeout to allow UI update
+    setTimeout(() => {
+      const sSamp = Math.floor(selection.start * sampleRate);
+      const eSamp = Math.floor(selection.end * sampleRate);
+      const slice = mono.slice(sSamp, eSamp);
+      
+      if (slice.length < 2) { 
+        alert('Selection too short - please select a larger time range'); 
+        transformBtn.disabled = false;
+        btnText.textContent = '🔄 Transform Selected Segment → FFT';
+        return; 
+      }
+      
+      // re-draw main waveform with highlight
+      drawWaveform(plot1, mono, '#58a6ff', true, [sSamp, eSamp]);
+      renderIntervalBar();
+      
+      const spec = computeSpectrum(slice, sampleRate);
+      drawSpectrum(plot2, spec.freqs, spec.mags);
+      
+      transformBtn.disabled = false;
+      btnText.textContent = '🔄 Transform Selected Segment → FFT';
+    }, 50);
+  });
+
+  // fit canvas heights on resize
+  function resizeAll(){ 
+    fitCanvas(plot1); 
+    fitCanvas(plot2); 
+    fitCanvas(intervalBar); 
+    
+    if (mono) {
+      drawWaveform(plot1, mono, '#58a6ff', true, null); 
+      const spec = computeSpectrum(mono, sampleRate);
+      drawSpectrum(plot2, spec.freqs, spec.mags);
+    }
+    renderIntervalBar(); 
+  }
+  
+  window.addEventListener('resize', resizeAll);
+
+  // Smooth loading animation
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.5s ease';
+    
+    setTimeout(() => {
+      document.body.style.opacity = '1';
+      loadAudio();
+    }, 100);
+  });
+
+  // start
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadAudio);
+  } else {
+    loadAudio();
+  }
+  </script>
+</body>
+</html>
