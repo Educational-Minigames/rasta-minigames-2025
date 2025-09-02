@@ -1,0 +1,266 @@
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+        <link href="../css/base.css" rel="stylesheet" type="text/css"/>
+        <link href="../css/gps.css" rel="stylesheet" type="text/css" />
+        <script defer src="../js/base.js"></script>
+        <script defer src="../js/gps.js"></script>
+    </head>
+    <body>
+        <div id="main_container">
+          <div class="article">
+              <div class="dark_light_bg_grad_top"></div>
+              <div class="dark_light_bg"  id="gps_hero_background" >
+                <div class="bg_content">
+                    <div class="drawer_container ratio_100" id="gps_orbits_hero"></div>
+                </div>
+              </div>
+              <div class="dark_light_bg_grad_bottom"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map0"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map1"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container ratio_100" id="string"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map2"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map3"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map4"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map5"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_drone0"></div>
+              </div>
+              <div class="slider_time" id="map_drone0_sl0"></div>
+              <div class="equation">
+                s = v &times; t
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_drone1"></div>
+              </div>
+              <div class="slider_time" id="map_drone1_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_sound0"></div>
+              </div>
+              <div class="slider_time" id="map_sound0_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_sound1"></div>
+              </div>
+              <div class="slider_time" id="map_sound1_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_sound2"></div>
+              </div>
+              <div class="slider_time" id="map_sound2_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_sound3"></div>
+              </div>
+              <div class="slider_time" id="map_sound3_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_80" id="clocks"></div>
+              </div>
+              <div class="slider_time" id="clocks_sl0"></div>
+              <div class="slider_bias" id="clocks_sl1"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_sound4"></div>
+              </div>
+              <div class="slider_time" id="map_sound4_sl0"></div>
+              <div class="slider_bias" id="map_sound4_sl1"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_sound5"></div>
+              </div>
+              <div class="slider_time" id="map_sound5_sl0"></div>
+              <div class="slider_bias" id="map_sound5_sl1"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_sound6"></div>
+              </div>
+              <div class="slider_time" id="map_sound6_sl0"></div>
+              <div class="slider_bias" id="map_sound6_sl1"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_70" id="map_sound7"></div>
+              </div>
+              <div class="slider_time" id="map_sound7_sl0"></div>
+              <div class="slider_bias" id="map_sound7_sl1"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map_ladder0"></div>
+              </div>
+              <div id="map_ladder0_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container ratio_100" id="spheres0"></div>
+              </div>
+              <div class="slider_green" id="spheres0_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container ratio_100" id="spheres1"></div>
+              </div>
+              <div class="slider_green" id="spheres1_sl0"></div>
+              <div class="slider_blue" id="spheres1_sl1"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container ratio_100" id="spheres2"></div>
+              </div>
+              <div class="slider_green" id="spheres2_sl0"></div>
+              <div class="slider_blue" id="spheres2_sl1"></div>
+              <div class="slider_red" id="spheres2_sl2"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_50" id="map_ladder1"></div>
+              </div>
+              <div id="map_ladder1_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map_ladder2"></div>
+              </div>
+              <div class="slider_time" id="map_ladder2_sl1"></div>
+              <div class="slider_bias" id="map_ladder2_sl2"></div>
+              <div id="map_ladder2_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container full_width ratio_60" id="map_ladder3"></div>
+              </div>
+              <div class="slider_time" id="map_ladder3_sl1"></div>
+              <div class="slider_bias" id="map_ladder3_sl2"></div>
+              <div id="map_ladder3_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="equation" id="nav_equations" style="color:#444">
+                    <div>
+                      <span class="sqrt_long">(<span class="rounded_bg solution">x</span> &minus; <span class="rounded_bg landmark_red">x<sub>1</sub></span>)<sup>2</sup> + (<span class="rounded_bg solution">y</span> &minus; <span class="rounded_bg landmark_red">y<sub>1</sub></span>)<sup>2</sup> + (<span class="rounded_bg solution">z</span> &minus; <span class="rounded_bg landmark_red">z<sub>1</sub></span>)<sup>2</sup></span> = v &times; (<span class="rounded_bg landmark_red">t<sub>1</sub></span> &minus; <span class="rounded_bg solution">b</span>)
+                    </div>
+                    <div>
+                      <span class="sqrt_long">(<span class="rounded_bg solution">x</span> &minus; <span class="rounded_bg landmark_green">x<sub>2</sub></span>)<sup>2</sup> + (<span class="rounded_bg solution">y</span> &minus; <span class="rounded_bg landmark_green">y<sub>2</sub></span>)<sup>2</sup> + (<span class="rounded_bg solution">z</span> &minus; <span class="rounded_bg landmark_green">z<sub>2</sub></span>)<sup>2</sup></span> = v &times; (<span class="rounded_bg landmark_green">t<sub>2</sub></span> &minus; <span class="rounded_bg solution">b</span>)
+                    </div>
+                    <div>
+                      <span class="sqrt_long">(<span class="rounded_bg solution">x</span> &minus; <span class="rounded_bg landmark_blue">x<sub>3</sub></span>)<sup>2</sup> + (<span class="rounded_bg solution">y</span> &minus; <span class="rounded_bg landmark_blue">y<sub>3</sub></span>)<sup>2</sup> + (<span class="rounded_bg solution">z</span> &minus; <span class="rounded_bg landmark_blue">z<sub>3</sub></span>)<sup>2</sup></span> = v &times; (<span class="rounded_bg landmark_blue">t<sub>3</sub></span> &minus; <span class="rounded_bg solution">b</span>)
+                    </div>
+                    <div>
+                      <span class="sqrt_long">(<span class="rounded_bg solution">x</span> &minus; <span class="rounded_bg landmark_yellow">x<sub>4</sub></span>)<sup>2</sup> + (<span class="rounded_bg solution">y</span> &minus; <span class="rounded_bg landmark_yellow">y<sub>4</sub></span>)<sup>2</sup> + (<span class="rounded_bg solution">z</span> &minus; <span class="rounded_bg landmark_yellow">z<sub>4</sub></span>)<sup>2</sup></span> = v &times; (<span class="rounded_bg landmark_yellow">t<sub>4</sub></span> &minus; <span class="rounded_bg solution">b</span>)
+                    </div>
+                </div>
+              </div>
+              <div class="equation">
+                c = 299 792 458 m/s
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container ratio_80" id="hill"></div>
+              </div>
+              <div class="slider_time" id="hill_sl0"></div>
+              <div id="hill_sl1"></div>
+              <div class="dark_light_bg_grad_top"></div>
+              <div class="dark_light_bg" >
+                <div class="bg_content">
+                    <div class="drawer_container ratio_60" id="visible_area"></div>
+                    <div id="visible_area_sl0"></div>
+                    <div class="drawer_container ratio_110" id="visible_cone"></div>
+                    <div id="visible_cone_sl0"></div>
+                    <div class="drawer_container full_width ratio_60" id="satellite_sim0"></div>
+                    <div class="equation">
+                      F = <span class="equation_frac">
+                      <span>G &times; m &times; M</span>
+                      <span class="equation_div_symbol">/</span>
+                      <span class="equation_div_bottom">r<sup>2</sup></span> 
+                      </span>
+                    </div>
+                    <div class="drawer_container full_width ratio_60" id="satellite_sim1"></div>
+                    <div class="drawer_container ratio_120" id="ellipse"></div>
+                    <div id="ellipse_sl0"></div>
+                    <div class="equation">
+                      a<sup>3</sup> = T<sup>2</sup> &times; <span class="equation_frac">
+                      <span>G &times; M</span>
+                      <span class="equation_div_symbol">/</span>
+                      <span class="equation_div_bottom">4 &times; &pi;<sup>2</sup></span> 
+                      </span>
+                    </div>
+                    <div class="drawer_container ratio_110" id="orbital_period"></div>
+                    <div id="orbital_period_sl0"></div>
+                    <div class="drawer_container ratio_110" id="orbital_inclination"></div>
+                    <div id="orbital_inclination_sl0"></div>
+                    <div class="slider_inclination" id="orbital_inclination_sl1"></div>
+                    <div class="drawer_container ratio_120" id="geostat_coverage"></div>
+                    <div id="geostat_coverage_sl0"></div>
+                    <div class="drawer_container ratio_100" id="geostat_distance"></div>
+                    <div class="drawer_container ratio_100" id="gps_orbits0"></div>
+                    <div class="drawer_container ratio_100" id="gps_orbits1"></div>
+                    <div class="dark" id="gps_orbits1_seg0"></div>
+                    <div class="drawer_container ratio_100" id="gps_orbits2"></div>
+                    <div class="drawer_container ratio_110" id="gps_orbits3"></div>
+                    <div class="drawer_container ratio_110" id="keplerian0"></div>
+                    <div class="slider_semi_major_axis" id="keplerian0_sl0"></div>
+                    <div class="slider_eccentricity" id="keplerian0_sl1"></div>
+                    <div class="drawer_container ratio_110" id="keplerian1"></div>
+                    <div class="slider_inclination" id="keplerian1_sl0"></div>
+                    <div class="slider_longitude" id="keplerian1_sl1"></div>
+                    <div class="drawer_container ratio_110" id="keplerian2"></div>
+                    <div class="slider_perigee" id="keplerian2_sl0"></div>
+                    <div class="slider_true_anomaly" id="keplerian2_sl1"></div>
+                    <div class="drawer_container ratio_130" id="time_dilation"></div>
+                    <div id="time_dilation_sl0"></div>
+                    <div class="drawer_container full_width ratio_60" id="atmosphere"></div>
+                    <div id="atmosphere_sl0"></div>
+                    <div class="drawer_container ratio_100" id="gps_orbits4"></div>
+                    <div class="drawer_container full_width ratio_70" id="overlap"></div>
+                    <div id="overlap_sl0"></div>
+                    <div class="slider_bias" id="overlap_sl1"></div>
+                </div>
+              </div>
+              <div class="dark_light_bg_grad_bottom"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_20" id="signal0"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_20" id="signal1"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_60" id="signal2"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_80" id="signal3"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_40" id="signal13"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_40" id="signal12"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_40" id="signal14"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div signal_div ratio_60" id="signal4"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_100" id="signal5"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_60" id="signal9"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_80" id="signal6"></div>
+              </div>
+              <div class="long_slider slider_code" id="signal6_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_80" id="signal7"></div>
+              </div>
+              <div class="long_slider slider_code" id="signal7_sl0"></div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_40" id="signal10"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_120" id="signal11"></div>
+                <div class="long_slider slider_code" id="signal11_sl0"></div>
+              </div>
+              <div class="padding_wrapper">
+                <div class="drawer_container signal_div ratio_120" id="signal8"></div>
+                <div class="long_slider slider_code" id="signal8_sl0"></div>
+                <div id="signal8_seg0"></div>
+              </div>
+          </div>
+        </div>
+        </div>
+        </div>
+    </body>
+  </html>
