@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مبدل متن و عدد</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: "Vazirmatn", sans-serif;
+    }
+    .rotate {
+      transition: transform 0.6s ease;
+    }
+    .rotated {
+      transform: rotate(180deg);
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .arrow-icon {
+      width: 5rem;
+      height: 5rem;
+    }
+    @media (max-width: 768px) {
+      .arrow-icon {
+        width: 3rem;
+        height: 3rem;
+      }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 ">
+  <div class="bg-gradient-to-br from-gray-100 to-gray-300 w-full max-w-5xl rounded-3xl shadow-xl p-10 fade-in">
+    <h1 class="text-center text-4xl font-extrabold mb-10 text-gray-800">مبدل متن ⇄ عدد دهدهی</h1>
+    
+    <div class="flex flex-col md:flex-row items-center justify-between gap-12">
+      <!-- Input Box -->
+      <textarea id="inputBox" placeholder="اینجا متن یا عدد را وارد کنید..." 
+        class="w-full md:w-1/2 h-52 rounded-2xl p-5 text-gray-700 shadow-inner border border-gray-300 focus:outline-none focus:ring-4 focus:ring-indigo-400 resize-none transition"></textarea>
+      
+      <!-- Converter Section -->
+      <div class="flex items-center justify-center gap-4">
+          <!-- فلش چپ -->
+          <svg class="hidden md:block arrow-icon fill-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 108.06">
+            <path d="M58.94,24.28a14.27,14.27,0,0,1,20.35-20l39.49,40.16a14.28,14.28,0,0,1,0,20L80.09,103.79a14.27,14.27,0,1,1-20.35-20L74.82,68.41l-60.67-.29a14.27,14.27,0,0,1,.24-28.54l59.85.28Z"/>
+          </svg>
+
+          <!-- مستطیل -->
+          <div id="converterRect" 
+              class="rotate w-48 h-28 bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold rounded-2xl shadow-2xl flex items-center justify-center text-2xl">
+            مبدل
+          </div>
+
+          <!-- فلش راست -->
+          <svg class="hidden md:block arrow-icon fill-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 108.06">
+            <path d="M58.94,24.28a14.27,14.27,0,0,1,20.35-20l39.49,40.16a14.28,14.28,0,0,1,0,20L80.09,103.79a14.27,14.27,0,1,1-20.35-20L74.82,68.41l-60.67-.29a14.27,14.27,0,0,1,.24-28.54l59.85.28Z"/>
+          </svg>
+      </div>
+
+      <!-- Output Box -->
+      <textarea id="outputBox" readonly
+        class="w-full md:w-1/2 h-52 rounded-2xl p-5 text-gray-700 bg-gray-50 shadow-inner border border-gray-300 resize-none"></textarea>
+    </div>
+
+    <!-- دکمه -->
+    <div class="flex justify-center mt-8">
+      <button id="reverseBtn" 
+        class="px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-purple-500/50 hover:scale-110 transition">
+        🔃 برعکس
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const inputBox = document.getElementById('inputBox');
+    const outputBox = document.getElementById('outputBox');
+    const reverseBtn = document.getElementById('reverseBtn');
+
+    let isReverse = false;
+
+    inputBox.addEventListener('input', convert);
+
+    reverseBtn.addEventListener('click', () => {
+      isReverse = !isReverse;
+      inputBox.value = '';
+      outputBox.value = '';
+      inputBox.placeholder = isReverse 
+        ? 'اینجا عدد دهدهی را وارد کنید...' 
+        : 'اینجا متن را وارد کنید...';
+    });
+
+    function convert() {
+      const value = inputBox.value.trim();
+      if (!value) {
+        outputBox.value = '';
+        return;
+      }
+
+      if (!isReverse) {
+        const codes = value.split('').map(ch => ch.charCodeAt(0));
+        outputBox.value = codes.join(' ');
+      } else {
+        const chars = value.split(' ')
+          .map(num => String.fromCharCode(parseInt(num)))
+          .join('');
+        outputBox.value = chars;
+      }
+    }
+  </script>
+</body>
+</html>
