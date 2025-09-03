@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مینی‌گیم جمله‌سازی</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4 font-sans">
+  <div class="w-full max-w-xl bg-white shadow-xl rounded-2xl p-6">
+    <h2 class="text-2xl font-bold text-center mb-4">جمله را کامل کن:</h2>
+    
+    <!-- جمله ساخته شده -->
+    <div id="sentenceArea" class="min-h-[70px] flex flex-wrap items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-4 text-lg text-gray-700 transition-all"></div>
+    
+    <!-- کلمات -->
+    <div id="wordBank" class="flex flex-wrap gap-3 justify-center mt-6"></div>
+    
+    <!-- دکمه ریست -->
+<div class="flex justify-center mt-6">
+  <button onclick="resetGame()" class="bg-red-500 text-white px-5 py-2 rounded-lg shadow hover:bg-red-600 transition">
+    شروع دوباره
+  </button>
+</div>
+  </div>
+
+<script>
+const words = [
+  "باز کردن", "در", "یخچال", "و", "گذاشتن", "فیل", "داخل", "یخچال", "و", "!باز کردن", "در", "یخچال"
+];
+
+const correctSentence = "باز کردن در یخچال و گذاشتن فیل داخل یخچال و !باز کردن در یخچال";
+let currentSentence = "";
+let usedCount = 0;
+
+const wordBank = document.getElementById("wordBank");
+const sentenceArea = document.getElementById("sentenceArea");
+
+function shuffleArray(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function renderWords() {
+  wordBank.innerHTML = "";
+  shuffleArray(words).forEach(word => {
+    const btn = document.createElement("button");
+    btn.className = "bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-xl shadow transition";
+    btn.textContent = word;
+    btn.onclick = () => addWord(word, btn);
+    wordBank.appendChild(btn);
+  });
+}
+
+function addWord(word, element) {
+  currentSentence += (currentSentence ? " " : "") + word;
+  usedCount++;
+  sentenceArea.textContent = currentSentence;
+  element.style.display = "none";
+
+  if (usedCount === words.length) {
+    if (currentSentence === correctSentence) {
+      sentenceArea.className = "min-h-[70px] flex flex-wrap items-center justify-center border-2 border-green-500 bg-green-100 rounded-xl p-4 text-lg text-green-800 font-bold transition";
+    } else {
+      sentenceArea.className = "min-h-[70px] flex flex-wrap items-center justify-center border-2 border-red-500 bg-red-100 rounded-xl p-4 text-lg text-red-800 font-bold transition";
+    }
+  }
+}
+
+function resetGame() {
+  currentSentence = "";
+  usedCount = 0;
+  sentenceArea.textContent = "";
+  sentenceArea.className = "min-h-[70px] flex flex-wrap items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-4 text-lg text-gray-700 transition";
+  renderWords();
+}
+
+renderWords();
+</script>
+</body>
+</html>
