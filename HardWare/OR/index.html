@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OR Gate Circuit</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'Vazir';
+            src: url('https://cdn.fontcdn.ir/Font/Persian/Vazir/Vazir.woff') format('woff');
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: 'Vazir', sans-serif;
+            flex-direction: column;
+        }
+        canvas {
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            max-width: 320px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>مدار گیت OR</h1>
+<div id="circuit"></div>
+
+<script>
+let sketch = function(p) {
+    let switch1On = false;
+    let switch2On = false;
+    // Define a global centerY for consistent positioning
+    let centerY;
+
+    p.setup = function() {
+        p.createCanvas(320, 450);
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(16);
+        p.textFont('Vazir');
+        centerY = p.height / 2; // Initialize centerY here
+    };
+
+    p.draw = function() {
+        p.background(255);
+        p.fill(255);
+        p.stroke(0);
+        p.strokeWeight(1);
+        p.rect(20, 30, 280, 390, 20);
+        p.textSize(22);
+        p.fill(0);
+        p.text("مدار تعاملی گیت OR", 160, 60);
+        
+        drawCircuit();
+    };
+
+    function drawCircuit() {
+        let centerX = p.width / 2;
+        let circuitWidth = 240;
+        let circuitHeight = 120;
+
+        let topWireY = centerY - circuitHeight / 2;
+        let bottomWireY = centerY + circuitHeight / 2;
+        let leftWireX = centerX - circuitWidth / 2;
+        let rightWireX = centerX + circuitWidth / 2;
+
+        let switchBoxX_left = centerX - circuitWidth / 4;
+        let switchBoxX_right = centerX + circuitWidth / 4;
+        let switchBoxY_top_branch1 = centerY - circuitHeight / 2;
+        let switchBoxY_bottom_branch2 = centerY - circuitHeight / 2 + 30;
+
+        p.stroke(0);
+        p.strokeWeight(3);
+        p.noFill();
+
+        // --- Main circuit frame (segmented) ---
+        // Top horizontal wire segments
+        p.line(leftWireX, topWireY, switchBoxX_left, topWireY); // Left of parallel branch
+        p.line(switchBoxX_right, topWireY, rightWireX, topWireY); // Right of parallel branch
+        
+        // Bottom horizontal wire segments (around the lamp)
+        let lampStartPointX = centerX; // Before lamp
+        let lampEndPointX = centerX;   // After lamp
+        p.line(leftWireX, bottomWireY, lampStartPointX, bottomWireY);
+        p.line(lampEndPointX, bottomWireY, rightWireX, bottomWireY);
+
+        // Vertical side wires
+        p.line(leftWireX, topWireY, leftWireX, bottomWireY);
+        p.line(rightWireX, topWireY, rightWireX, bottomWireY);
+
+        // --- Battery (Left) ---
+        drawBattery(leftWireX, centerY);
+        
+        // --- Lamp (Bottom wire, center) ---
+        drawBulb(centerX, bottomWireY, switch1On || switch2On);
+
+        // --- Parallel Switches Section ---
+        // Vertical connections to main top wire
+        p.line(switchBoxX_left, topWireY, switchBoxX_left, switchBoxY_bottom_branch2); // Left vertical line
+        p.line(switchBoxX_right, topWireY, switchBoxX_right, switchBoxY_bottom_branch2); // Right vertical line
+
+        // Individual branches for switches
+        // Branch 1 (top switch)
+        let switch1TermX1 = switchBoxX_left + 15; // Point before terminal 1
+        let switch1TermX2 = switchBoxX_right - 15; // Point after terminal 2
+        let switch1MidX = (switchBoxX_left + switchBoxX_right) / 2;
+        
+        // Fixed wires before and after switch 1 terminals
+        p.stroke(0);
+        p.strokeWeight(3);
+        p.line(switchBoxX_left, switchBoxY_top_branch1, switch1MidX - 15, switchBoxY_top_branch1); // Wire before terminal 1
+        p.line(switch1MidX + 15, switchBoxY_top_branch1, switchBoxX_right, switchBoxY_top_branch1); // Wire after terminal 2
+
+        // Draw switch 1 arm (changes color/state)
+        drawSwitchArm(switch1MidX, switchBoxY_top_branch1, switch1On);
+        drawSwitchTerminals(switch1MidX, switchBoxY_top_branch1, 'A');
+
+        // Branch 2 (bottom switch)
+        let switch2TermX1 = switchBoxX_left + 15;
+        let switch2TermX2 = switchBoxX_right - 15;
+        let switch2MidX = (switchBoxX_left + switchBoxX_right) / 2;
+
+        // Fixed wires before and after switch 2 terminals
+        p.stroke(0);
+        p.strokeWeight(3);
+        p.line(switchBoxX_left, switchBoxY_bottom_branch2, switch2MidX - 15, switchBoxY_bottom_branch2); // Wire before terminal 1
+        p.line(switch2MidX + 15, switchBoxY_bottom_branch2, switchBoxX_right, switchBoxY_bottom_branch2); // Wire after terminal 2
+
+        // Draw switch 2 arm (changes color/state)
+        drawSwitchArm(switch2MidX, switchBoxY_bottom_branch2, switch2On);
+        drawSwitchTerminals(switch2MidX, switchBoxY_bottom_branch2, 'B');
+    }
+
+    function drawBattery(x, y_center) {
+        p.push();
+        p.translate(x, y_center);
+        p.stroke(0);
+        p.strokeWeight(4);
+        p.line(-20, -5, 20, -5);
+        p.line(-10, 5, 10, 5);
+        p.noStroke();
+        p.fill(0);
+        p.textSize(10);
+        p.text('باتری', 35, 10);
+        p.pop();
+    }
+
+    function drawBulb(x, y, isOn) {
+        p.push();
+        p.translate(x, y);
+        p.stroke(0);
+        p.strokeWeight(2);
+        if (isOn) {
+            p.fill(255, 255, 0); // Yellow for ON
+        } else {
+            p.fill(255); // White for OFF
+        }
+        p.ellipse(0, 0, 30, 30);
+        p.stroke(0);
+        p.strokeWeight(1);
+        if (isOn) {
+            p.stroke(255, 150, 0); // Orange inner cross when ON
+            p.strokeWeight(2);
+        }
+        p.line(-6, -6, 6, 6);
+        p.line(-6, 6, 6, -6);
+        p.fill(0);
+        p.textAlign(p.LEFT);
+        p.textSize(12);
+        p.noStroke();
+        p.text('لامپ', 20, 15);
+        p.pop();
+    }
+
+    // Draws the switch terminals and label
+    function drawSwitchTerminals(x, y, label) {
+        p.push();
+        p.translate(x, y);
+        p.stroke(0);
+        p.strokeWeight(3);
+        p.fill(0);
+        
+        p.ellipse(-15, 0, 5, 5); // Left terminal
+        p.ellipse(15, 0, 5, 5);  // Right terminal
+        
+        p.fill(0);
+        p.textAlign(p.CENTER);
+        p.textSize(10);
+        p.noStroke();
+        p.text(label, 0, 20); // Switch label (A or B)
+        p.pop();
+    }
+
+    // Draws only the movable arm of the switch
+    function drawSwitchArm(x, y, isOn) {
+        p.push();
+        p.translate(x, y);
+        if (isOn) {
+            p.stroke(0, 150, 0); // Green for ON
+            p.strokeWeight(4);
+            p.line(-15, 0, 15, 0); // Closed path
+        } else {
+            p.stroke(255, 0, 0); // Red for OFF
+            p.strokeWeight(3);
+            p.line(-15, 0, 10, -12); // Open path
+        }
+        p.pop();
+    }
+
+
+    p.mousePressed = function() {
+        let centerX = p.width / 2;
+        let circuitWidth = 240;
+        let circuitHeight = 120;
+        
+        let switchBoxX_left = centerX - circuitWidth / 4;
+        let switchBoxX_right = centerX + circuitWidth / 4;
+        let switchBoxY_top_branch1 = centerY - circuitHeight / 2;
+        let switchBoxY_bottom_branch2 = centerY - circuitHeight / 2 + 30;
+
+        let switch1_center_x = (switchBoxX_left + switchBoxX_right) / 2;
+        let switch1_center_y = switchBoxY_top_branch1;
+        
+        let switch2_center_x = (switchBoxX_left + switchBoxX_right) / 2;
+        let switch2_center_y = switchBoxY_bottom_branch2;
+        
+        let dist1 = p.dist(p.mouseX, p.mouseY, switch1_center_x, switch1_center_y);
+        let dist2 = p.dist(p.mouseX, p.mouseY, switch2_center_x, switch2_center_y);
+        
+        if (dist1 < 20) { // Click radius
+            switch1On = !switch1On;
+        }
+        if (dist2 < 20) { // Click radius
+            switch2On = !switch2On;
+        }
+    };
+};
+
+new p5(sketch, 'circuit');
+</script>
+
+</body>
+</html>
