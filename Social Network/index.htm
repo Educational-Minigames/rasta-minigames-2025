@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MiniGame Graph — Stable</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <header class="app-header" role="banner">
+        <div class="brand">
+            <h1 class="title">شبکه های اجتماعی</h1>
+            <p class="subtitle">مینی گیم مربوط به social networking</p>
+        </div>
+
+        <div class="controls" role="toolbar" aria-label="ابزارها">
+            <button id="btnHelp" class="btn ghost" type="button">راهنما</button>
+            <button id="btnClear" class="btn secondary" type="button">پاک‌سازی</button>
+            <button id="btnBfsSel" class="btn" type="button">اجرای BFS</button>
+            <button id="btnRedraw" class="btn ghost" type="button">بازآرایی</button>
+        </div>
+    </header>
+
+    <main class="canvas-wrap" role="main">
+        <div class="info-floating" id="infoFloating" aria-hidden="false">
+            <div class="info-row"><span class="label">نودها:</span><span id="nodesTotal" class="value">—</span></div>
+            <div class="info-row"><span class="label">مؤلفه‌ها:</span><span id="componentsCount" class="value">—</span>
+            </div>
+            <div class="info-row"><span class="label">بازدیدنشده:</span><span id="unvisitedCount" class="value">—</span>
+            </div>
+            <div class="info-row"><span class="label">مرحله:</span><span id="currentLevel" class="value">0</span></div>
+            <div class="info-row"><span class="label">انتخاب:</span><span id="selectedList"
+                    class="value">هیچ‌کدام</span></div>
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="graphCanvas" tabindex="0" aria-label="بوم گراف"></canvas>
+        </div>
+    </main>
+
+    <!-- Modal راهنما -->
+    <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <h4 id="helpTitle">راهنما</h4>
+            <div class="modal-body">
+                <p>دستورالعمل‌ها:</p>
+                <ul>
+                    <li>روی یک نود کلیک کن تا انتخاب شود؛ Shift+کلیک برای چندتایی.</li>
+                    <li>کلیک وسط (یا نگه‌داشتن طولانی در موبایل) روی نود → اجرای BFS لایه‌ای (فقط لایهٔ جاری قرمز
+                        می‌شود).</li>
+                    <li>برای حذف یال: دو نود انتخاب کن و Enter را فشار بده.</li>
+                    <li>پاک‌سازی، بازآرایی و سایر دکمه‌ها در بالا موجودند.</li>
+                </ul>
+            </div>
+            <div class="modal-actions">
+                <button id="closeModal" class="btn ghost">بستن</button>
+                <button id="modalGotIt" class="btn">متوجه شدم</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip" aria-hidden="true"></div>
+
+    <script type="module" src="js/graph_canvas.js"></script>
+</body>
+
+</html>
