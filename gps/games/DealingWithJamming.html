@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>مینی گیم مقابله با جمینگ</title>
+  <style>
+    @font-face {
+      font-family: 'B Zar';
+      src: url('fonts/BZar.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }
+    body {
+      background: #111;
+      color: #fff;
+      font-family: 'B Zar';
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: #222;
+      border: 2px solid #00ff00;
+      border-radius: 10px;
+    }
+    button, input[type=range] {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button {
+      background: #00ff00;
+      color: #111;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #44ff44;
+    }
+    input[type=range] {
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>⚡ مقابله با جمینگ: افزایش توان سیگنال ⚡</h1>
+  <p>توان سیگنال رو تغییر بده و ببین چطور سیگنال می‌تونه اثر نویز رو کم کنه!</p>
+  <canvas id="signalCanvas" width="600" height="300"></canvas>
+  <br>
+  <label>قدرت سیگنال: <span id="powerValue">1</span></label><br>
+  <input type="range" id="powerControl" min="1" max="10" value="1">
+
+  <script>
+    const canvas = document.getElementById("signalCanvas");
+    const ctx = canvas.getContext("2d");
+    const powerControl = document.getElementById("powerControl");
+    const powerValue = document.getElementById("powerValue");
+
+    let t = 0;
+    let signalPower = 1;
+    let jamming = true; 
+
+    powerControl.addEventListener("input", () => {
+      signalPower = parseInt(powerControl.value);
+      powerValue.textContent = signalPower;
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+
+      for (let x = 0; x < canvas.width; x++) {
+        let y = Math.sin((x + t) * 0.05) * (20 * signalPower);
+
+        if (jamming) {
+          y += (Math.random() - 0.5) * 100;
+        }
+
+        ctx.lineTo(x, canvas.height / 2 + y);
+      }
+
+      ctx.strokeStyle = "#00ff00";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      t += 2;
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>مینی گیم Jamming</title>
+  <style>
+    @font-face {
+      font-family: 'B zar';
+      src: url('fonts/BZar.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    body {
+      background: #111;
+      color: #fff;
+      font-family: 'B zar';
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: #222;
+      border: 2px solid #00ff00;
+      border-radius: 10px;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #00ff00;
+      color: #111;
+      transition: 0.3s;
+      font-family: 'B zar';
+    }
+
+    button:hover {
+      background: #44ff44;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 شبیه‌ساز جمینگ 🎮</h1>
+  <p>روی دکمه بزن تا نویز (جمینگ) روی سیگنال اعمال بشه!</p>
+  <canvas id="signalCanvas" width="600" height="300"></canvas>
+  <button onclick="toggleJamming()">🔊 روشن/خاموش کردن Jamming</button>
+
+  <script>
+    const canvas = document.getElementById("signalCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let jamming = false;
+    let t = 0;
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+
+      for (let x = 0; x < canvas.width; x++) {
+        let y = Math.sin((x + t) * 0.05) * 50;
+
+        if (jamming) {
+          y += (Math.random() - 0.5) * 100;
+        }
+
+        ctx.lineTo(x, canvas.height / 2 + y);
+      }
+
+      ctx.strokeStyle = jamming ? "#ff0000" : "#00ff00";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      t += 2;
+      requestAnimationFrame(draw);
+    }
+
+    function toggleJamming() {
+      jamming = !jamming;
+    }
+
+    draw();
+  </script>
+</body>
+</html>
