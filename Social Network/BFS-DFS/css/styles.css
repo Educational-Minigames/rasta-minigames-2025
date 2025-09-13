@@ -1,0 +1,220 @@
+:root {
+    --bg: #071424;
+    --accent: #bfefff;
+    --blue: #3bacf7;
+    --yellow: #ffd358;
+    --bfs-red: #e63946;
+    --muted: #9fb7c9;
+    --panel-shadow: 0 18px 48px rgba(2, 10, 18, 0.6);
+    --font: 'Vazirmatn', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+
+    --arrow-fill: rgba(255, 211, 88, 0.92);
+    --arrow-stroke: rgba(1, 30, 40, 0.95);
+    --edge: #2b9fe9;
+}
+
+/* base */
+* {
+    box-sizing: border-box
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    background: linear-gradient(180deg, #071424, #072833);
+    font-family: var(--font);
+    color: var(--accent);
+    -webkit-font-smoothing: antialiased;
+}
+
+.app-header {
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+}
+
+.brand {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.brand .title {
+    margin: 0;
+    font-size: 18px;
+    color: var(--blue);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.brand .subtitle {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    transition: transform .12s ease, box-shadow .12s ease;
+    background: linear-gradient(180deg, var(--blue), #2b96e6);
+    color: #fff;
+    box-shadow: 0 10px 28px rgba(59, 172, 247, 0.06);
+    font-family: var(--font);
+}
+
+.btn.secondary {
+    background: linear-gradient(180deg, var(--yellow), #ffd358);
+    color: #072033;
+    box-shadow: 0 10px 28px rgba(255, 211, 88, 0.06);
+}
+
+.btn.ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--blue);
+    box-shadow: none;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+/* canvas */
+.canvas-wrap {
+    height: calc(100vh - 68px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.canvas-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#graphCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 8px;
+    box-shadow: var(--panel-shadow);
+    touch-action: none;
+    cursor: grab;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 30%);
+}
+
+/* tooltip & info */
+.tooltip {
+    position: absolute;
+    display: none;
+    pointer-events: none;
+    transform: translate(-50%, -120%);
+    background: #ffffff;
+    color: #072033;
+    padding: 8px 10px;
+    border-radius: 8px;
+    box-shadow: 0 12px 36px rgba(2, 18, 30, 0.14);
+    font-size: 13px;
+    z-index: 60;
+}
+
+.info-floating {
+    position: absolute;
+    top: 92px;
+    right: 18px;
+    z-index: 55;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.info-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.info-row .value {
+    font-weight: 800;
+    color: var(--accent);
+    margin-right: 6px;
+}
+
+/* modal */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 8, 18, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 7000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .14s ease;
+}
+
+.modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal {
+    width: min(760px, 94%);
+    background: #ffffff;
+    color: #072033;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 28px 68px rgba(7, 20, 40, 0.28);
+}
+
+.modal h4 {
+    margin: 0 0 10px 0;
+    color: var(--blue);
+}
+
+/* responsive */
+@media (max-width:900px) {
+    .app-header {
+        height: 84px;
+        padding: 10px;
+    }
+
+    .brand .title {
+        font-size: 16px;
+    }
+
+    .info-floating {
+        right: 12px;
+        top: 100px;
+    }
+}
