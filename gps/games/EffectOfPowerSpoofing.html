@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini Game Functions</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: "B Zar";
+      background: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #sliderContainer {
+      margin: 20px;
+      width: 400px;
+    }
+    input[type=range] {
+      width: 100%;
+    }
+    #plot {
+      width: 90%;
+      max-width: 800px;
+      height: 500px;
+    }
+  </style>
+</head>
+<body>
+  <h2>تاثیر قدرت موج جعلی بر پیام دریافت شده توسط گیرنده</h2>
+  <div id="sliderContainer">
+    <label for="aSlider">a: <span id="aValue">1</span></label>
+    <input type="range" id="aSlider" min="0" max="3" step="0.1" value="1">
+  </div>
+  <div id="plot"></div>
+
+  <script>
+    const aSlider = document.getElementById("aSlider");
+    const aValue = document.getElementById("aValue");
+
+    function f(x) {
+      if (0 < x && x < 2) return 1;
+      if (3 < x && x < 4) return 1;
+      if (6 < x && x < 8) return 1;
+      return -1;
+    }
+
+    function g(x, a) {
+      if (1 < x && x < 3) return a;
+      if (5 < x && x < 6) return a;
+      if (6 < x && x < 8) return 1;
+      return -a;
+    }
+
+    function j(x, a) {
+      return (f(x) + g(x, a)) > 0 ? 1 : -1;
+    }
+
+    function updatePlot(a) {
+      const xs = [];
+      const fVals = [];
+      const gVals = [];
+      const jVals = [];
+      for (let x = 0; x <= 10; x += 0.05) {
+        xs.push(x);
+        fVals.push(f(x));
+        gVals.push(g(x, a));
+        jVals.push(j(x, a));
+      }
+
+      const traceF = {
+        x: xs,
+        y: fVals,
+        mode: "lines",
+        name: "پیام اصلی",
+        line: { color: "red", width: 3 }
+      };
+
+      const traceG = {
+        x: xs,
+        y: gVals,
+        mode: "lines",
+        name: "پیام جعلی",
+        line: { color: "green", width: 3 }
+      };
+
+      const traceJ = {
+        x: xs,
+        y: jVals,
+        mode: "lines",
+        name: "پیام دریافت شده توسط گیرنده",
+        line: { color: "#00ffff", width: 3 } // فسفری (سیان نزدیک فسفری)
+      };
+
+      const layout = {
+        paper_bgcolor: "#111",
+        plot_bgcolor: "#222",
+        font: { color: "#eee" },
+        xaxis: { title: "x" },
+        yaxis: { title: "y", range: [-3, 3] }
+      };
+
+      Plotly.newPlot("plot", [traceF, traceG, traceJ], layout, {displayModeBar: false});
+    }
+
+    // Initial plot
+    updatePlot(parseFloat(aSlider.value));
+
+    aSlider.addEventListener("input", () => {
+      const a = parseFloat(aSlider.value);
+      aValue.textContent = a.toFixed(1);
+      updatePlot(a);
+    });
+  </script>
+</body>
+</html>
