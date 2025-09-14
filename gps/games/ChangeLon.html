@@ -127,7 +127,7 @@ const INITIAL_OFFSET = -118;
     let diffMinutes = Math.floor(diffMs / 60000);
     let diffHours = Math.floor(diffMinutes / 60);
     let diffMins = diffMinutes % 60;
-    diffHours = (diffHours + 24) % 24;
+    diffHours = (diffHours + 24) % 24 > 12 ? 24-(diffHours  + 12 + 12 ) % 24 :(diffHours + 24) % 24 ;
 
     let diffDate = new Date(Date.UTC(2020,0,1,diffHours,diffMins));
     rotateClock('diff', diffDate);

@@ -1,0 +1,361 @@
+
+<!doctype html>
+<html lang="fa">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mini GeoGebra-like — ستاره شمالی</title>
+<style>
+    .blue {
+        touch-action: none; /* جلوگیری از scroll/zoom روی موبایل */
+      }
+      #star {
+        touch-action: none;
+      }
+      
+  :root{
+    --bg:#ffffff;
+    --circle:#333;
+    --accent:#0a8;
+    --accent-2:#3a8;
+    --blue:#1e73be;
+    --yellow:#f3e44a;
+    --muted:#888;
+    --dot:6px;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);font-family: "Segoe UI", Tahoma, "Helvetica Neue", Arial;}
+  .wrap{width:100%;height:100%;display:flex;justify-content:center;align-items:center;direction:rtl}
+  .board{
+    width:700px;height:520px;background:linear-gradient(#fff,#f7f9fb);
+    border-radius:10px; box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    padding:12px; position:relative; overflow:hidden;
+  }
+  svg{width:100%;height:100%;touch-action: none;user-select: none;-webkit-user-drag: none;}
+  .label{font-size:14px; fill:#222; font-weight:600;}
+  .small{font-size:12px; fill:#0a0a0a;}
+  .degLabel{font-size:13px; fill:var(--accent-2); font-weight:700;}
+  .persian{font-family: "Vazirmatn", "Tahoma", "Segoe UI", sans-serif;}
+  /* hint text */
+  .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="board">
+    <input type="range" id="starSlider" min="-3000" max="0" value="0" style="width:100%;margin-top:10px;">
+
+    <svg id="svg" viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg" >
+      <!-- vertical dotted line (محور ستاره شمالی) -->
+
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <!-- vertical dotted line -->
+      <g id="verticalLine" stroke="#bbb" stroke-width="2" stroke-dasharray="2 6">
+        <line id="vline" x1="300" y1="20" x2="300" y2="500"/>
+      </g>
+
+      <!-- circle center and circle -->
+      <g id="geom">
+        <circle id="circle" cx="300" cy="300" r="120" stroke="#444" stroke-width="3" fill="none"/>
+        <circle id="centerDot" cx="300" cy="300" r="4" fill="#444"/>
+      </g>
+
+      <!-- tangent line (will be updated) -->
+      <line id="tangent" x1="0" y1="0" x2="0" y2="0" stroke="#666" stroke-width="2" opacity="0.8"/>
+
+      <!-- segment from C to star -->
+      <line id="segCStar" x1="0" y1="0" x2="0" y2="0" stroke="#222" stroke-width="2"/>
+
+      <!-- segment from center to C and to B -->
+      <line id="radC" x1="300" y1="300" x2="0" y2="0" stroke="#aaa" stroke-width="2"/>
+      <line id="radB" x1="300" y1="300" x2="0" y2="0" stroke="#aaa" stroke-width="2"/>
+
+      <!-- two blue draggable points on circle -->
+      <g id="points">
+        <circle class="blue" id="pB" cx="420" cy="300" r="8" fill="var(--blue)" stroke="#08345b" stroke-width="1.5" cursor="pointer"/>
+        <circle class="blue" id="pC" cx="235" cy="250" r="8" fill="var(--blue)" stroke="#08345b" stroke-width="1.5" cursor="pointer"/>
+      </g>
+
+      <!-- north star point (yellow diamond) on vertical line -->
+      <g id="starGroup">
+        <g transform="translate(520,120)" id="star">
+          <rect x="-8" y="-8" width="16" height="16" transform="rotate(45)" fill="var(--yellow)" stroke="#cc9f00"/>
+        </g>
+        <text x="540" y="120" class="small persian" fill="#e6ce00">ستاره شمالی</text>
+      </g>
+
+      <!-- arc for beta at center A -->
+      <path id="arcBeta" d="" stroke="rgba(0,160,120,0.9)" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <text id="betaLabel" x="0" y="0" class="degLabel persian">β=0°</text>
+
+      <!-- arc for alpha at point C -->
+      <path id="arcAlpha" d="" stroke="rgba(10,120,200,0.85)" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <text id="alphaLabel" x="0" y="0" class="degLabel persian">α=0°</text>
+
+      <!-- small helper points for visuals -->
+      <circle id="proj" cx="0" cy="0" r="4" fill="#2a9" opacity="0.2"/>
+
+      <!-- labels for blue points -->
+      <text id="labelB" x="0" y="0" class="label persian" fill="#0a0a0a">B</text>
+      <text id="labelC" x="0" y="0" class="label persian" fill="#0a0a0a">C</text>
+
+    </svg>
+
+
+    <div class="hint persian">نکته: دو نقطه‌ی آبی و ستاره قابل جابه‌جایی هستند — نقطه‌ی ستاره فقط روی خط عمودی حرکت می‌کند.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const svg = document.getElementById('svg');
+  const circle = document.getElementById('circle');
+  const center = { x: +circle.getAttribute('cx'), y: +circle.getAttribute('cy') };
+  const r = +circle.getAttribute('r');
+
+  const pB = document.getElementById('pB');
+  const pC = document.getElementById('pC');
+  const star = document.getElementById('star');
+  const vlineX = center.x; // x coordinate of vertical dotted line (ستاره شمالی خط)
+  const tangent = document.getElementById('tangent');
+  const segCStar = document.getElementById('segCStar');
+  const radC = document.getElementById('radC');
+  const radB = document.getElementById('radB');
+
+  const arcBeta = document.getElementById('arcBeta');
+  const arcAlpha = document.getElementById('arcAlpha');
+  const betaLabel = document.getElementById('betaLabel');
+  const alphaLabel = document.getElementById('alphaLabel');
+  const labelB = document.getElementById('labelB');
+  const labelC = document.getElementById('labelC');
+
+  // get initial positions
+  let pBpos = { x:+pB.getAttribute('cx'), y:+pB.getAttribute('cy') };
+  let pCpos = { x:+pC.getAttribute('cx'), y:+pC.getAttribute('cy') };
+  let starPos = { x:vlineX, y:120 };
+
+  // utility functions
+  function vec(a,b){ return {x:b.x-a.x, y:b.y-a.y}; }
+  function len(v){ return Math.hypot(v.x,v.y); }
+  function dot(a,b){ return a.x*b.x + a.y*b.y; }
+  function cross(a,b){ return a.x*b.y - a.y*b.x; }
+  function angleBetween(u,v){
+    // return angle in radians between vectors u and v [0..pi]
+    const cos = dot(u,v)/(len(u)*len(v));
+    return Math.acos(Math.max(-1, Math.min(1, cos)));
+  }
+  function signAngle(u,v){
+    // signed angle from u to v
+    const ang = Math.atan2(cross(u,v), dot(u,v));
+    return ang; // in radians, -pi..pi
+  }
+  function toDeg(rad){ return +(rad*180/Math.PI).toFixed(2); }
+
+  // update visuals
+  function updateAll(){
+    // ensure pB and pC are on circle (they should be movable constrained)
+    const toCenterB = vec(center, pBpos);
+    const lb = len(toCenterB);
+    pBpos.x = center.x + (toCenterB.x / lb) * r;
+    pBpos.y = center.y + (toCenterB.y / lb) * r;
+    pB.setAttribute('cx', pBpos.x);
+    pB.setAttribute('cy', pBpos.y);
+
+    const toCenterC = vec(center, pCpos);
+    const lc = len(toCenterC);
+    pCpos.x = center.x + (toCenterC.x / lc) * r;
+    pCpos.y = center.y + (toCenterC.y / lc) * r;
+    pC.setAttribute('cx', pCpos.x);
+    pC.setAttribute('cy', pCpos.y);
+
+    // star position
+    star.setAttribute('transform', `translate(${starPos.x},${starPos.y})`);
+    // segment from C to star
+    segCStar.setAttribute('x1', pCpos.x);
+    segCStar.setAttribute('y1', pCpos.y);
+    segCStar.setAttribute('x2', starPos.x);
+    segCStar.setAttribute('y2', starPos.y);
+
+    // radii lines
+    radC.setAttribute('x1', center.x);
+    radC.setAttribute('y1', center.y);
+    radC.setAttribute('x2', pCpos.x);
+    radC.setAttribute('y2', pCpos.y);
+
+    radB.setAttribute('x1', center.x);
+    radB.setAttribute('y1', center.y);
+    radB.setAttribute('x2', pBpos.x);
+    radB.setAttribute('y2', pBpos.y);
+
+    // tangent at C: direction perpendicular to radius(C)
+    const radiusVec = vec(center, pCpos); // from center to C
+    const radN = { x: radiusVec.x / len(radiusVec), y: radiusVec.y / len(radiusVec) };
+    // tangent direction is radN rotated by 90deg
+    const tanDir = { x: -radN.y, y: radN.x };
+    // extend tangent line both ways
+    const Tlen = 800;
+    const tx1 = pCpos.x - tanDir.x * Tlen;
+    const ty1 = pCpos.y - tanDir.y * Tlen;
+    const tx2 = pCpos.x + tanDir.x * Tlen;
+    const ty2 = pCpos.y + tanDir.y * Tlen;
+    tangent.setAttribute('x1', tx1);
+    tangent.setAttribute('y1', ty1);
+    tangent.setAttribute('x2', tx2);
+    tangent.setAttribute('y2', ty2);
+
+    // compute beta: angle at center between B and C (vectors from center to B and C)
+    const vB = vec(center, pBpos);
+    const vC = vec(center, pCpos);
+    let betaRad = angleBetween(vB, vC); // 0..pi
+    // decide orientation for arc direction using cross product sign
+    const crossBC = cross(vB, vC);
+    const betaDeg = toDeg(betaRad);
+
+    // draw beta arc near center
+    drawArcAt(center.x, center.y, 60, Math.atan2(vB.y, vB.x), Math.atan2(vC.y, vC.x), arcBeta, crossBC<0);
+
+    // place beta label at bisector point
+    const angBis = (Math.atan2(vB.y, vB.x) + Math.atan2(vC.y, vC.x)) / 2;
+    const bx = center.x + Math.cos(angBis) * 90;
+    const by = center.y + Math.sin(angBis) * 90;
+    betaLabel.setAttribute('x', bx);
+    betaLabel.setAttribute('y', by+6);
+    betaLabel.textContent = `β = ${betaDeg}°`;
+
+    // compute alpha: angle at C between (star - C) and tangent direction (we'll use tangent vector as second ray)
+    const vStar = vec(pCpos, starPos);
+    // tangent vector from C (tanDir)
+    const vTan = tanDir; // already normalized
+    // angle between vTan and vStar
+    let alphaRad = angleBetween(vTan, vStar);
+    // to present nicer orientation, map to 0..180
+    let compRad = Math.PI - alphaRad;   // زاویه مکمل
+    const alphaDeg = toDeg(compRad);
+    // draw arc at C between tangent direction and star direction
+    const angTan = Math.atan2(vTan.y, vTan.x);
+    const angStar = Math.atan2(vStar.y, vStar.x);
+    const crossTS = cross(vTan, vStar);
+    drawArcAt(pCpos.x, pCpos.y, 36, angTan, angStar, arcAlpha, crossTS<0);
+
+    // place alpha label near arc midpoint
+    let midAng = (angTan + angStar)/2;
+    // correct wrapping if angles differ > pi
+    if(Math.abs(angTan - angStar) > Math.PI){
+      midAng += Math.PI; // approximate better midpoint
+    }
+    const ax = pCpos.x + Math.cos(midAng) * 58;
+    const ay = pCpos.y + Math.sin(midAng) * 58;
+    alphaLabel.setAttribute('x', ax);
+    alphaLabel.setAttribute('y', ay+4);
+    alphaLabel.textContent = `α' = ${alphaDeg}°`;
+
+    // labels near points
+    labelB.setAttribute('x', pBpos.x + 12);
+    labelB.setAttribute('y', pBpos.y + 6);
+    labelB.textContent = 'B';
+    labelC.setAttribute('x', pCpos.x + 12);
+    labelC.setAttribute('y', pCpos.y + 6);
+    labelC.textContent = 'C';
+  }
+
+  // draw arc between two angles around center (SVG arc path)
+  function drawArcAt(cx,cy,r, a1, a2, pathEl, ccwPrefer){
+    // normalize angles to [0,2pi)
+    function norm(a){ while(a<0) a += Math.PI*2; while(a>=Math.PI*2) a -= Math.PI*2; return a; }
+    a1 = norm(a1); a2 = norm(a2);
+    let diff = a2 - a1;
+    // choose shorter arc by default, but allow orientation from ccwPrefer flag
+    if(ccwPrefer){
+      if(diff > 0) diff = diff - Math.PI*2;
+    } else {
+      if(diff < 0) diff = diff + Math.PI*2;
+    }
+    const largeArc = Math.abs(diff) > Math.PI ? 1 : 0;
+    // end angles
+    const end1 = a1;
+    const end2 = a1 + diff;
+    const x1 = cx + r*Math.cos(end1);
+    const y1 = cy + r*Math.sin(end1);
+    const x2 = cx + r*Math.cos(end2);
+    const y2 = cy + r*Math.sin(end2);
+    const d = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} ${diff>0?1:0} ${x2} ${y2}`;
+    pathEl.setAttribute('d', d);
+  }
+
+  // dragging logic (constrain to circle for points; constrain to vertical line for star)
+  let dragTarget = null;
+  let offset = {x:0,y:0};
+
+  function onPointerDown(evt){
+    const pt = getMouse(evt);
+    const target = evt.target;
+    if(target === pC || target === star || target.parentNode === star){
+
+      dragTarget = target === star || target.parentNode === star ? 'star' : (target === pB ? 'B' : 'C');
+    } else return;
+    evt.preventDefault();
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  }
+  function onPointerMove(evt){
+    evt.preventDefault(); // اضافه کنید
+    const m = getMouse(evt);
+    if(!dragTarget) return;
+    if(dragTarget === 'C'){
+      pCpos.x = m.x; 
+      pCpos.y = m.y;
+    } 
+    updateAll();
+  }
+  function onPointerUp(evt){
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+    dragTarget = null;
+  }
+  function getMouse(evt){
+    const rect = svg.getBoundingClientRect();
+    return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+  }
+
+  // attach pointerdown to circles and star
+  pB.addEventListener('pointerdown', onPointerDown);
+  pC.addEventListener('pointerdown', onPointerDown);
+  // star group: listen on star rect element and text label
+
+  // initial update
+  updateAll();
+
+  // make points keyboard-movable for accessibility (optional)
+  window.addEventListener('keydown', function(e){
+    // small nudges: choose which to nudge via last selected — omitted for brevity
+  });
+
+  // also allow double click on circle to create new C position (optional)
+  svg.addEventListener('dblclick', function(ev){
+    // place C to clicked location constrained to circle
+    const m = getMouse(ev);
+    const v = vec(center, m);
+    const L = len(v);
+    if(L > 0){
+      pCpos.x = center.x + v.x / L * r;
+      pCpos.y = center.y + v.y / L * r;
+      updateAll();
+    }
+
+
+  });
+  const starSlider = document.getElementById('starSlider');
+  starSlider.addEventListener('input', function(){
+    // ستاره از بالا (y=20) شروع می‌کنه و تا بی‌نهایت پایین میره
+    starPos.x = vlineX;
+    starPos.y = 20 + +this.value;  
+    updateAll();
+  });
+})();
+</script>
+</body>
+</html>
