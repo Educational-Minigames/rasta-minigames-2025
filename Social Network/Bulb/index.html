@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="fa">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Bulb Minigame</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg1: #061018;
+            --panel: #071624;
+            --muted: #9fb3c2;
+            --accent: #facc15;
+            --edgeA: #ffd86b;
+            --edgeB: #f59e0b;
+            font-family: "Vazirmatn", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: linear-gradient(180deg, #061018, #071226);
+            color: #eaf7fb;
+            direction: rtl;
+            font-family: inherit
+        }
+
+        /* wrapper: min-width added to help responsive stability */
+        .wrap {
+            max-width: 1100px;
+            min-width: 360px;
+            margin: 12px auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: calc(100vh - 24px)
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        button,
+        .next-fab,
+        .btn {
+            font-family: inherit
+        }
+
+        .btn {
+            padding: 7px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.02);
+            color: #eaffff;
+            cursor: pointer;
+            font-size: 13px
+        }
+
+        .btn.primary {
+            background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+            color: #012;
+            border: 0
+        }
+
+        .btn.yellow {
+            background: linear-gradient(90deg, #ffd86b, #f59e0b);
+            color: #041018;
+            border: 0
+        }
+
+        .btn.help {
+            padding: 6px 10px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.03)
+        }
+
+        .layout {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            flex: 1 1 auto;
+            min-height: 0
+        }
+
+        aside.panel {
+            width: 260px;
+            padding: 10px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #071624, #02101a);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            font-size: 13px;
+            flex: 0 0 260px;
+            overflow: auto
+        }
+
+        .graph-wrap {
+            flex: 1 1 auto;
+            min-height: 0;
+            min-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .graph-surface {
+            width: 100%;
+            height: 420px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #071427, #03121a);
+            position: relative;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            overflow: hidden
+        }
+
+        /* logical drawing area; scaled for responsiveness */
+        .graph-inner {
+            position: absolute;
+            left: 0;
+            top: 0;
+            transform-origin: top left;
+            width: 760px;
+            height: 420px
+        }
+
+        svg#edges {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 760px;
+            height: 420px;
+            pointer-events: none;
+            z-index: 1
+        }
+
+        .node {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.06));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.6);
+            transform-origin: center;
+            z-index: 22;
+            transition: transform .22s cubic-bezier(.2, .9, .2, 1), box-shadow .22s
+        }
+
+        .node.student {
+            width: 72px;
+            height: 72px;
+            font-size: 20px;
+            border-color: rgba(6, 165, 230, 0.12);
+            box-shadow: 0 14px 36px rgba(6, 165, 230, 0.06)
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+            transition: transform .22s ease, filter .22s ease
+        }
+
+        .node:hover .avatar {
+            transform: scale(1.06)
+        }
+
+        .feedback {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            background: rgba(0, 0, 0, 0.28);
+            padding: 4px 6px;
+            border-radius: 8px;
+            display: none;
+            z-index: 25;
+            transition: opacity .18s ease, transform .18s ease
+        }
+
+        .feedback.show {
+            display: block;
+            opacity: 1;
+            transform: translateX(-50%) translateY(-2px)
+        }
+
+        .content-badge {
+            position: absolute;
+            right: -8px;
+            bottom: -8px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.2));
+            padding: 4px 6px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 26;
+            opacity: 0;
+            transform: scale(.92);
+            transition: opacity .16s ease, transform .16s ease;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.03)
+        }
+
+        .content-badge.visible {
+            opacity: 1;
+            transform: scale(1)
+        }
+
+        .content-badge.from-neighbor {
+            box-shadow: 0 6px 14px rgba(6, 165, 230, 0.12);
+            border: 1px solid rgba(6, 165, 230, 0.18)
+        }
+
+        .name-label {
+            position: absolute;
+            left: calc(100% + 8px);
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            color: #eaf7fb;
+            white-space: nowrap;
+            z-index: 23
+        }
+
+        .fav-below {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: var(--muted);
+            z-index: 22;
+            white-space: nowrap;
+            width: 120px;
+            text-align: center
+        }
+
+        .tooltip {
+            position: fixed;
+            background: linear-gradient(180deg, #071924, #02121a);
+            color: #dff7ff;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 13px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            display: none;
+            min-width: 180px;
+            max-width: 260px
+        }
+
+        .tooltip h5 {
+            margin: 0 0 6px 0;
+            font-size: 13px
+        }
+
+        .tooltip .pref {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 6px
+        }
+
+        .tooltip .pref div.cat {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .mini-pie {
+            display: none;
+            margin-top: 8px;
+            width: 120px;
+            height: 80px
+        }
+
+        .node.disgust {
+            animation: shake .6s linear;
+            filter: grayscale(.6) contrast(.9);
+            box-shadow: 0 8px 26px rgba(200, 20, 20, 0.12);
+            border-color: rgba(200, 20, 20, 0.28)
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translateX(0)
+            }
+
+            25% {
+                transform: translateX(-4px)
+            }
+
+            50% {
+                transform: translateX(4px)
+            }
+
+            75% {
+                transform: translateX(-3px)
+            }
+
+            100% {
+                transform: translateX(0)
+            }
+        }
+
+        .node.pulse {
+            animation: nodePulse .9s ease
+        }
+
+        @keyframes nodePulse {
+            0% {
+                transform: scale(1)
+            }
+
+            50% {
+                transform: scale(1.07)
+            }
+
+            100% {
+                transform: scale(1)
+            }
+        }
+
+        .edge-line {
+            stroke-linecap: round;
+            transition: stroke-width .18s ease, filter .2s ease, opacity .18s ease;
+            stroke-width: 1.6;
+            opacity: 0.98
+        }
+
+        .edge-line.glow {
+            filter: drop-shadow(0 8px 18px rgba(250, 200, 21, 0.12));
+            stroke-width: 3;
+            opacity: 1
+        }
+
+        .next-fab {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            z-index: 60;
+            width: 72px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #06b6d4, #0ea5e9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #041018;
+            font-weight: 700;
+            font-size: 13px;
+            border: none;
+            box-shadow: 0 12px 30px rgba(3, 10, 20, 0.6);
+            cursor: pointer
+        }
+
+        .modes {
+            display: flex;
+            gap: 8px;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            align-items: center
+        }
+
+        .mode-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 14px
+        }
+
+        .mode-item input {
+            display: none
+        }
+
+        .mode-item.active {
+            background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+            color: #041018;
+            border: 0
+        }
+
+        .mode-item span.title {
+            font-size: 14px;
+            font-weight: 600
+        }
+
+        .help-modal {
+            position: fixed;
+            right: 50%;
+            transform: translateX(50%);
+            top: 12%;
+            width: 380px;
+            background: linear-gradient(180deg, #071427, #02121a);
+            color: #dff7ff;
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 240;
+            max-height: 70vh;
+            overflow: auto
+        }
+
+        .result-modal {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 520px;
+            background: linear-gradient(180deg, #071427, #02121a);
+            color: #dff7ff;
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+            display: none;
+            z-index: 250;
+            max-height: 80vh;
+            overflow: auto
+        }
+
+        .result-modal .mode-name {
+            margin: 6px 0 8px 0;
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 14px
+        }
+
+        .result-modal .chart {
+            width: 100%;
+            height: 260px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .result-modal .questions {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .legend-list {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #eaf7fb;
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .legend-item {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .legend-swatch {
+            width: 14px;
+            height: 12px;
+            border-radius: 3px;
+            display: inline-block
+        }
+
+        /* responsive adjustments */
+        @media (max-width:980px) {
+            .layout {
+                flex-direction: column
+            }
+
+            aside.panel {
+                width: 100%;
+                order: 2
+            }
+
+            .graph-surface {
+                order: 1;
+                height: 360px
+            }
+
+            .graph-inner {
+                width: 720px;
+                height: 360px
+            }
+
+            svg#edges {
+                width: 720px;
+                height: 360px
+            }
+
+            .graph-surface {
+                min-height: 220px
+            }
+        }
+
+        @media (max-width:600px) {
+            * {
+                font-size: smaller !important;
+            }
+
+            .wrap {
+                padding: 8px
+            }
+
+            header {
+                gap: 8px
+            }
+
+            h1 {
+                font-size: 15px !important
+            }
+
+            .graph-surface {
+                height: 320px
+            }
+
+            .graph-inner {
+                width: 680px;
+                height: 320px
+            }
+
+            svg#edges {
+                width: 680px;
+                height: 320px
+            }
+
+            .node {
+                width: 48px;
+                height: 48px
+            }
+
+            .node.student {
+                width: 60px;
+                height: 60px
+            }
+
+            .name-label {
+                font-size: 12px
+            }
+
+            .fav-below {
+                font-size: 11px;
+                width: 100px
+            }
+
+            .mode-item {
+                padding: 6px 8px;
+                font-size: 13px
+            }
+
+            .next-fab {
+                width: 64px;
+                height: 36px;
+                font-size: 12px
+            }
+
+            .tooltip {
+                min-width: 140px;
+                max-width: 200px
+            }
+
+            .mini-pie {
+                width: 100px;
+                height: 72px
+            }
+
+            .result-modal {
+                font-size: small;
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <div>
+                <h1>حباب</h1>
+                <p class="subtitle">آموزش تأثیر شبکه در سیستم‌های توصیه — نمایش محتوا → واکنش</p>
+            </div>
+
+            <div class="controls" aria-hidden="false">
+                <div class="modes" id="modes" role="radiogroup" aria-label="انتخاب مود">
+                    <label class="mode-item active" data-val="1" role="radio" aria-checked="true"><input type="checkbox"
+                            name="mode" checked><span class="title">شباهت کامل</span></label>
+                    <label class="mode-item" data-val="0.5" role="radio" aria-checked="false"><input type="checkbox"
+                            name="mode"><span class="title">متعادل</span></label>
+                    <label class="mode-item" data-val="0" role="radio" aria-checked="false"><input type="checkbox"
+                            name="mode"><span class="title">تنوع کامل</span></label>
+                </div>
+
+                <button id="simulateBtn" class="btn primary">شروع</button>
+                <button id="resetBtn" class="btn yellow">ریست</button>
+                <button id="helpBtn" class="btn help">راهنما</button>
+                <div id="roundLabel" style="min-width:160px;text-align:center;color:var(--muted);font-size:13px"></div>
+            </div>
+        </header>
+
+        <div class="layout">
+            <div class="graph-wrap">
+                <div class="graph-surface" id="graph" aria-live="polite" role="application">
+                    <div class="graph-inner" id="graphInner">
+                        <svg id="edges" preserveAspectRatio="none" aria-hidden="true"></svg>
+                        <!-- nodes injected here -->
+                    </div>
+                    <button id="nextBtn" class="next-fab" title="مرحله بعد">بعدی ▶</button>
+                </div>
+            </div>
+
+            <aside class="panel" aria-label="راهنما و دسته‌ها">
+                <h3>انواع محتوا (نمادها)</h3>
+                <div class="favorites" id="favoritesList"></div>
+
+                <div id="questions"
+                    style="display:none;margin-top:10px;background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;color:#dff7ff">
+                    <h4 style="margin:0 0 6px 0;font-size:14px">سوالات برای فکر کردن</h4>
+                    <ol style="padding-left:18px;margin:0;font-size:13px;color:var(--muted)">
+                        <li>چه تفاوتی در محتوای دیده‌شده بین حالات مختلف بود؟</li>
+                        <li>آیا بعضی کاربران خسته یا غیرفعال شدند؟ چرا؟</li>
+                        <li>تأثیر دوستان را چگونه مشاهده کردی؟</li>
+                    </ol>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- help & result modals -->
+    <div id="helpModal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <h4 id="helpTitle">راهنمای دقیق عملکرد برنامه</h4>
+        <ol style="padding-left:18px;color:var(--muted);font-size:13px">
+            <li><strong>ساختار شبکه:</strong> ۶ کاربر؛ هر گره یک آواتار، یال‌ها روابط را نشان می‌دهند. رستالو (c) به سه
+                کاربر متصل است.</li>
+            <li><strong>حالت‌ها:</strong> سه حالت — شباهت کامل (دوستان نقش قوی دارند)، متعادل، تنوع کامل (دوستان تأثیر
+                ندارند). تنها یکی از حالت‌ها فعال می‌شود (روی حالت کلیک کن).</li>
+            <li><strong>روند بازی:</strong> پیش‌فرض ۶ راند. در هر راند دو فاز: نمایشِ محتوا (همهٔ کاربران هم‌زمان) →
+                واکنش (هر کاربر واکنش نشان می‌دهد).</li>
+            <li><strong>خستگی:</strong> نمایش‌های مکرر از یک دسته باعث fatigue می‌شود و ممکن است کاربر را خسته یا
+                غیرفعال کند.</li>
+            <li><strong>ریست:</strong> با دکمهٔ ریست علایق همهٔ کاربران تصادفی می‌شود و تاریخچه پاک می‌شود.</li>
+            <li><strong>نتیجه:</strong> وقتی به آخر رسیدی، مودال نتایج باز می‌شود و نمودار درصد دسته‌ها و سؤالاتِ
+                هدفمندِ مربوط به مود را نمایش می‌دهد.</li>
+        </ol>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px">
+            <button id="closeHelpModalBtn" class="btn">بستن راهنما</button>
+        </div>
+    </div>
+
+    <div id="resultModal" class="result-modal" role="dialog" aria-modal="true">
+        <h4>خلاصهٔ نتایج</h4>
+        <div id="resultMode" class="mode-name">مود: —</div>
+        <div class="chart" style="padding:10px;display:flex;gap:12px;align-items:flex-start;justify-content:center">
+            <canvas id="pieChart" width="300" height="200" aria-hidden="false"></canvas>
+            <div style="min-width:160px">
+                <div class="legend-list" id="legendList"></div>
+            </div>
+        </div>
+        <div class="questions" id="resultQuestions" style="margin-top:10px"></div>
+        <div style="text-align:left;margin-top:10px"><button id="closeResult" class="btn">بستن</button></div>
+    </div>
+
+    <!-- tooltip: now includes ordered prefs AND a mini pie -->
+    <div id="tooltip" class="tooltip" role="status" aria-hidden="true"></div>
+
+    <script>
+        (function () {
+            // categories & colors
+            const categories = {
+                'آشپزی': ['🍔', '🍕', '🥗'],
+                'حیوانات': ['🐶', '🐱', '🐤'],
+                'موسیقی': ['🎵', '🎸', '🎧'],
+                'هنر و سرگرمی': ['🎨', '🎬', '🎮'],
+                'سیاست': ['📰', '🌍', '📊'],
+                'عکاسی': ['📸', '🏞️', '🌷']
+            };
+            const categoryColors = { 'آشپزی': '#f59e0b', 'حیوانات': '#facc15', 'موسیقی': '#06b6d4', 'هنر و سرگرمی': '#8b5cf6', 'سیاست': '#ef4444', 'عکاسی': '#10b981' };
+
+            // graph & positions (logical coords)
+            const graph = {
+                a: ['b'],
+                b: ['a', 'c', 'e'],
+                c: ['b', 'd', 'f', 'e'],
+                d: ['c', 'e'],
+                e: ['b', 'd', 'c'],
+                f: ['c']
+            };
+
+            const positions = { a: { x: 40, y: 260 }, b: { x: 100, y: 40 }, c: { x: 320, y: 40 }, d: { x: 460, y: 300 }, e: { x: 300, y: 299 }, f: { x: 620, y: 180 } };
+
+
+            const characters = [
+                { id: 'a', name: 'احسان', icon: 'assets/001-user.png', fav: 'آشپزی' },
+                { id: 'b', name: 'پویان', icon: 'assets/002-user.png', fav: 'حیوانات' },
+                { id: 'c', name: 'رستالو', icon: 'assets/rasta-user.png', fav: 'موسیقی', isStudent: true },
+                { id: 'd', name: 'مینا', icon: 'assets/003-user.png', fav: 'هنر و سرگرمی' },
+                { id: 'e', name: 'سارا', icon: 'assets/004-user.png', fav: 'سیاست' },
+                { id: 'f', name: 'رضا', icon: 'assets/005-user.png', fav: 'عکاسی' }
+            ];
+
+            const reactionMapping = [
+                { threshold: 0.75, emojis: ['☺️', '😄'] },
+                { threshold: 0.25, emojis: ['🙂'] },
+                { threshold: -0.25, emojis: ['🤨'] },
+                { threshold: -0.75, emojis: ['🥱'] },
+                { threshold: -1, emojis: ['🤢'] }
+            ];
+
+            const state = { rounds: 6, simulationResults: [], currentStateIndex: 0, influenceFactor: 1, modeName: 'شباهت کامل' };
+
+            // DOM refs
+            const graphEl = document.getElementById('graph');
+            const graphInner = document.getElementById('graphInner');
+            const svg = document.getElementById('edges');
+            const tooltip = document.getElementById('tooltip');
+            const helpModal = document.getElementById('helpModal');
+            const resultModal = document.getElementById('resultModal');
+            const resultModeEl = document.getElementById('resultMode');
+            const legendListEl = document.getElementById('legendList');
+            const resultQuestionsEl = document.getElementById('resultQuestions');
+
+            // helpers
+            function allContents() { const out = []; for (const k in categories) categories[k].forEach(e => out.push({ emoji: e, category: k })); return out; }
+            function sampleRandom(arr, k) { const copy = arr.slice(), out = []; for (let i = 0; i < k && copy.length > 0; i++) { const j = Math.floor(Math.random() * copy.length); out.push(copy.splice(j, 1)[0]); } return out; }
+            function getReactionEmoji(rating) { for (let i = 0; i < reactionMapping.length; i++) { if (rating >= reactionMapping[i].threshold) { const arr = reactionMapping[i].emojis; return arr[Math.floor(Math.random() * arr.length)]; } } return '😐'; }
+
+            // draw edges
+            function drawEdges() {
+                while (svg.firstChild) svg.removeChild(svg.firstChild);
+                const ns = 'http://www.w3.org/2000/svg';
+                const defs = document.createElementNS(ns, 'defs'); svg.appendChild(defs);
+                const innerW = graphInner.clientWidth, innerH = graphInner.clientHeight;
+                svg.setAttribute('viewBox', `0 0 ${innerW} ${innerH}`);
+                svg.setAttribute('width', innerW); svg.setAttribute('height', innerH);
+                const drawn = new Set();
+                for (const from in graph) {
+                    graph[from].forEach(to => {
+                        const key = [from, to].sort().join('-');
+                        if (drawn.has(key)) return;
+                        drawn.add(key);
+                        const p1 = positions[from], p2 = positions[to];
+                        const fromSize = (characters.find(c => c.id === from)?.isStudent) ? 72 : 56;
+                        const toSize = (characters.find(c => c.id === to)?.isStudent) ? 72 : 56;
+                        const r1 = fromSize / 2, r2 = toSize / 2;
+                        const x1c = p1.x + r1, y1c = p1.y + r1;
+                        const x2c = p2.x + r2, y2c = p2.y + r2;
+                        const vx = x2c - x1c, vy = y2c - y1c;
+                        const dist = Math.sqrt(vx * vx + vy * vy) || 1;
+                        const ux = vx / dist, uy = vy / dist;
+                        const x1 = x1c + ux * r1 * 0.85;
+                        const y1 = y1c + uy * r1 * 0.85;
+                        const x2 = x2c - ux * r2 * 0.85;
+                        const y2 = y2c - uy * r2 * 0.85;
+
+                        const grad = document.createElementNS(ns, 'linearGradient');
+                        const gradId = 'grad-' + key + '-' + Math.floor(Math.random() * 999999);
+                        grad.setAttribute('id', gradId); grad.setAttribute('x1', '0%'); grad.setAttribute('y1', '0%'); grad.setAttribute('x2', '100%'); grad.setAttribute('y2', '0%');
+                        const s1 = document.createElementNS(ns, 'stop'); s1.setAttribute('offset', '0%'); s1.setAttribute('stop-color', getComputedStyle(document.documentElement).getPropertyValue('--edgeA') || '#ffd86b');
+                        const s2 = document.createElementNS(ns, 'stop'); s2.setAttribute('offset', '100%'); s2.setAttribute('stop-color', getComputedStyle(document.documentElement).getPropertyValue('--edgeB') || '#f59e0b');
+                        grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad);
+
+                        const line = document.createElementNS(ns, 'line');
+                        line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+                        line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+                        line.setAttribute('stroke', `url(#${gradId})`); line.setAttribute('class', 'edge-line');
+                        line.setAttribute('data-from', from); line.setAttribute('data-to', to);
+                        svg.appendChild(line);
+                    });
+                }
+            }
+
+            function clearNodes() { Array.from(graphInner.querySelectorAll('.node, .name-label, .fav-below')).forEach(n => n.remove()); }
+            function drawNodes() {
+                clearNodes();
+                characters.forEach(ch => {
+                    const nd = document.createElement('div'); nd.className = 'node' + (ch.isStudent ? ' student' : ''); nd.id = 'node-' + ch.id;
+                    nd.style.left = positions[ch.id].x + 'px'; nd.style.top = positions[ch.id].y + 'px';
+                    const fb = document.createElement('div'); fb.className = 'feedback'; fb.textContent = ''; nd.appendChild(fb);
+                    const img = document.createElement('img'); img.className = 'avatar'; img.src = ch.icon; img.alt = ch.name;
+                    img.onerror = () => { img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="100%" height="100%" fill="%2302162a"/><text x="50%" y="50%" fill="%23fff" font-size="16" font-family="Arial" dominant-baseline="middle" text-anchor="middle">👤</text></svg>'; };
+                    nd.appendChild(img);
+
+                    let hoverTimer = null;
+                    nd.addEventListener('mouseenter', ev => {
+                        showTooltip(ev, ch);
+                        highlightEdges(ch.id, true);
+                        hoverTimer = setTimeout(() => { showTooltip(ev, ch); }, 200);
+                    });
+                    nd.addEventListener('mousemove', ev => { moveTooltip(ev); });
+                    nd.addEventListener('mouseleave', () => {
+                        hideTooltip();
+                        highlightEdges(null, false);
+                        if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+                    });
+
+                    // click/touch fallback: show tooltip near click
+                    nd.addEventListener('click', ev => {
+                        showTooltip(ev, ch, true);
+                        highlightEdges(ch.id, true, true);
+                        setTimeout(() => highlightEdges(null, false), 800);
+                    });
+
+                    graphInner.appendChild(nd);
+
+                    const name = document.createElement('div'); name.className = 'name-label'; name.id = 'name-' + ch.id; name.textContent = ch.name;
+                    name.style.left = (positions[ch.id].x + 66) + 'px'; name.style.top = (positions[ch.id].y + 16) + 'px';
+                    graphInner.appendChild(name);
+
+                    const fav = document.createElement('div'); fav.className = 'fav-below'; fav.id = 'fav-' + ch.id;
+                    const favEmoji = (categories[ch.fav] && categories[ch.fav][0]) ? categories[ch.fav][0] : '✨';
+                    fav.textContent = `علاقه‌مندی: ${favEmoji}`;
+                    fav.style.left = (positions[ch.id].x + 25) + 'px'; fav.style.top = (positions[ch.id].y + 60) + 'px';
+                    graphInner.appendChild(fav);
+                });
+            }
+
+            // tooltip with ordered prefs and mini pie
+            function showTooltip(ev, ch, forcePosition = false) {
+                const order = ['آشپزی', 'حیوانات', 'موسیقی', 'هنر و سرگرمی', 'سیاست', 'عکاسی'];
+                const prefs = [ch.fav].concat(order.filter(x => x !== ch.fav));
+                const recent = (ch.history || []).slice(-6).reverse().map(h => h.emoji).join(' ') || '—';
+                let html = `<h5 style="margin:0">${ch.name}</h5>`;
+                html += `<div style="color:var(--muted);font-size:12px;margin-top:6px">اولویت‌ها:</div>`;
+                prefs.forEach(p => {
+                    const e = (categories[p] && categories[p][0]) ? categories[p][0] : '';
+                    html += `<div class="pref"><div class="cat">${e} ${p}</div></div>`;
+                });
+                html += `<div style="margin-top:6px;color:var(--muted);font-size:12px">تاریخچهٔ اخیر: <span style="color:#eaf7fb">${recent}</span></div>`;
+                html += `<canvas class="mini-pie" id="tooltipPie" width="120" height="80" aria-hidden="true"></canvas>`;
+                tooltip.innerHTML = html;
+                tooltip.style.display = 'block';
+                tooltip.setAttribute('aria-hidden', 'false');
+
+                // draw mini pie
+                setTimeout(() => {
+                    const canvas = document.getElementById('tooltipPie');
+                    if (canvas) drawMiniPie(canvas, ch);
+                }, 0);
+
+                // position tooltip (fixed) near pointer or element
+                const wrap = graphEl.getBoundingClientRect();
+                let left, top;
+                if (forcePosition && ev && ev.clientX) {
+                    left = ev.clientX;
+                    top = ev.clientY;
+                } else if (ev && ev.clientX) {
+                    left = ev.clientX;
+                    top = ev.clientY;
+                } else {
+                    const nd = document.getElementById('node-' + ch.id);
+                    const r = nd.getBoundingClientRect();
+                    left = r.left + r.width / 2; top = r.top + r.height / 2;
+                }
+
+                // compute within viewport and adjust so it doesn't overflow
+                const ttRect = tooltip.getBoundingClientRect();
+                const viewportW = document.documentElement.clientWidth;
+                const viewportH = document.documentElement.clientHeight;
+                let px = left + 12;
+                let py = top + 12;
+                if (px + ttRect.width > viewportW - 8) px = Math.max(8, left - ttRect.width - 12);
+                if (py + ttRect.height > viewportH - 8) py = Math.max(8, top - ttRect.height - 12);
+                tooltip.style.left = px + 'px';
+                tooltip.style.top = py + 'px';
+            }
+
+            function moveTooltip(ev) {
+                if (!tooltip || tooltip.style.display === 'none') return;
+                const tw = tooltip.offsetWidth || 200;
+                let left = ev.clientX - tw - 20;
+                if (left < 8) left = ev.clientX + 12;
+                const top = Math.max(8, ev.clientY - 12);
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+            }
+
+            function hideTooltip() {
+                tooltip.style.display = 'none';
+                tooltip.setAttribute('aria-hidden', 'true');
+                tooltip.innerHTML = '';
+            }
+
+            // draw mini pie for tooltip (history distribution)
+            function drawMiniPie(canvas, ch) {
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                const counts = {};
+                for (const k in categories) counts[k] = 0;
+                (ch.history || []).forEach(hx => { if (hx && hx.category) counts[hx.category] = (counts[hx.category] || 0) + 1; });
+                const order = ['آشپزی', 'حیوانات', 'موسیقی', 'هنر و سرگرمی', 'سیاست', 'عکاسی'];
+                const vals = order.map(o => counts[o] || 0);
+                const total = vals.reduce((s, v) => s + v, 0);
+                if (!total) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = '#dff7ff';
+                    ctx.font = '11px Vazirmatn, Arial';
+                    ctx.fillText('بدون داده', 8, h / 2 + 4);
+                    return;
+                }
+                let start = 0;
+                const cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 6;
+                for (let i = 0; i < order.length; i++) {
+                    const lab = order[i]; const v = vals[i] || 0;
+                    if (!v) continue;
+                    const ang = v / total * Math.PI * 2;
+                    ctx.beginPath(); ctx.moveTo(cx, cy);
+                    ctx.arc(cx, cy, r, start, start + ang);
+                    ctx.closePath(); ctx.fillStyle = categoryColors[lab] || '#777'; ctx.fill();
+                    start += ang;
+                }
+                ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.arc(cx, cy, r * 0.45, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // highlight edges
+            function highlightEdges(nodeId, focus, strong) {
+                const lines = svg.querySelectorAll('line.edge-line');
+                lines.forEach(l => {
+                    l.classList.remove('glow');
+                    if (!nodeId) { l.style.opacity = ''; l.style.strokeWidth = ''; return; }
+                    const f = l.getAttribute('data-from'), t = l.getAttribute('data-to');
+                    if (f === nodeId || t === nodeId) { l.classList.add('glow'); l.style.opacity = 1; l.style.strokeWidth = strong ? 3 : 2; }
+                    else if (focus) { l.style.opacity = 0.18; l.style.strokeWidth = 1.2; }
+                    else { l.style.opacity = ''; l.style.strokeWidth = ''; }
+                });
+            }
+
+            // simulation (kept robust + fatigue + drift)
+            function simulateRounds(roundsCount, influenceFactor, modeName) {
+                state.simulationResults = []; state.currentStateIndex = 0; state.influenceFactor = influenceFactor; state.modeName = modeName;
+                characters.forEach(ch => { ch.history = []; ch.exposures = {}; ch.deactivated = false; });
+
+                const all = allContents();
+                for (let round = 0; round < roundsCount; round++) {
+                    const roundState = {};
+                    const snapshot = {};
+                    characters.forEach(ch => snapshot[ch.id] = ch.history.slice());
+
+                    // Phase 1: choose content
+                    characters.forEach(ch => {
+                        const seen = new Set((ch.history || []).map(h => h.emoji));
+                        const unseen = all.filter(c => !seen.has(c.emoji));
+                        const randomPool = sampleRandom(unseen, Math.min(6, unseen.length));
+                        const neigh = graph[ch.id] || [];
+                        let neighborContents = [];
+                        neigh.forEach(nid => {
+                            const nh = snapshot[nid] || [];
+                            nh.slice(-4).forEach(item => neighborContents.push({ emoji: item.emoji, category: item.category, rating: item.rating, from: nid }));
+                        });
+
+                        const pool = []; const poolSeen = new Set();
+                        if (influenceFactor >= 0.9 && neighborContents.length > 0) {
+                            neighborContents.forEach(it => { if (!poolSeen.has(it.emoji)) { pool.push(it); poolSeen.add(it.emoji); } });
+                            randomPool.forEach(it => { if (!poolSeen.has(it.emoji)) { pool.push(it); poolSeen.add(it.emoji); } });
+                        } else if (influenceFactor <= 0.01) {
+                            randomPool.forEach(it => { if (!poolSeen.has(it.emoji)) { pool.push(it); poolSeen.add(it.emoji); } });
+                        } else {
+                            randomPool.concat(neighborContents).forEach(it => { if (!poolSeen.has(it.emoji)) { pool.push(it); poolSeen.add(it.emoji); } });
+                        }
+
+                        if (pool.length === 0) { roundState[ch.id] = { content: null, category: null, rating: 0, reaction: '', fromNeighbor: false }; return; }
+
+                        let personalW, neighW, curW, repW;
+                        if (influenceFactor >= 0.9) { personalW = 0.25; neighW = 0.65; curW = 0.15; repW = 0.2; }
+                        else if (influenceFactor <= 0.01) { personalW = 0.8; neighW = 0.0; curW = 0.25; repW = 0.15; }
+                        else { personalW = 0.6 * (1 - influenceFactor) + 0.2; neighW = 0.35 * influenceFactor + 0.1; curW = 0.25 * (1 - influenceFactor) + 0.05; repW = 0.2; }
+
+                        let best = null, bestScore = -Infinity, bestFromNeighbor = false;
+                        pool.forEach(item => {
+                            const base = (item.category === ch.fav) ? 1 : 0.5;
+                            let tot = 0, cnt = 0;
+                            neigh.forEach(nid => { const nh = snapshot[nid] || []; const rec = nh.slice().reverse().find(h => h.emoji === item.emoji); if (rec) { tot += rec.rating; cnt++; } });
+                            const neighborAvg = cnt > 0 ? tot / cnt : 0;
+                            const curiosity = (cnt > 0 && !ch.history.find(h => h.emoji === item.emoji)) ? 1 : 0;
+                            const rep = (ch.exposures[item.category] || 0);
+                            const repetitionPenalty = rep * -0.35;
+                            let score = personalW * base + neighW * neighborAvg + curW * curiosity + repW * repetitionPenalty;
+
+                            const fromNeighbor = neighborContents.find(nc => nc.emoji === item.emoji);
+                            if (influenceFactor >= 0.9 && fromNeighbor) score += 0.6 + (fromNeighbor.rating || 0) * 0.2;
+                            if (influenceFactor <= 0.01) score += Math.random() * 0.2;
+
+                            if (score > bestScore) { bestScore = score; best = item; bestFromNeighbor = !!fromNeighbor; }
+                        });
+
+                        roundState[ch.id] = { content: best.emoji, category: best.category, rating: null, reaction: '', fromNeighbor: bestFromNeighbor };
+                    });
+
+                    // Phase 2: reactions
+                    characters.forEach(ch => {
+                        const shown = roundState[ch.id];
+                        if (!shown || !shown.content) return;
+                        let rating, reaction;
+                        if (ch.deactivated) { rating = -1; reaction = '☠️'; }
+                        else {
+                            const baseRating = (shown.category === ch.fav) ? 1 : 0.5;
+                            const expCount = ch.exposures[shown.category] || 0;
+                            const fatiguePenalty = Math.min(0.95, 0.16 * expCount + 0.06 * Math.max(0, expCount - 2));
+                            let neighborTot = 0, neighborCnt = 0;
+                            (graph[ch.id] || []).forEach(nid => {
+                                const nh = (characters.find(cc => cc.id === nid)?.history) || [];
+                                const rec = nh.slice().reverse().find(h => h.emoji === shown.content);
+                                if (rec) { neighborTot += (rec.rating || 0); neighborCnt++; }
+                            });
+                            const neighborAvg = neighborCnt > 0 ? neighborTot / neighborCnt : 0;
+                            const neighborContribution = neighborAvg * state.influenceFactor * 0.5;
+                            rating = baseRating + neighborContribution - fatiguePenalty;
+                            if (ch.history && ch.history.length >= 2) {
+                                const last1 = ch.history[ch.history.length - 1], last2 = ch.history[ch.history.length - 2];
+                                if (last1 && last2 && last1.category !== ch.fav && last2.category !== ch.fav) rating -= 0.35;
+                            }
+                            if (rating < -0.75) { ch.deactivated = true; rating = -1; reaction = '☠️'; }
+                            else reaction = getReactionEmoji(rating);
+                        }
+                        shown.rating = rating; shown.reaction = reaction;
+                        ch.history.push({ emoji: shown.content, category: shown.category, rating });
+                        ch.exposures[shown.category] = (ch.exposures[shown.category] || 0) + 1;
+                    });
+
+                    // favorites drift
+                    characters.forEach(ch => {
+                        if (ch.deactivated) return;
+                        const favCount = ch.exposures[ch.fav] || 0;
+                        let topCat = ch.fav, topVal = favCount;
+                        for (const cat in ch.exposures) { if (ch.exposures[cat] > topVal) { topVal = ch.exposures[cat]; topCat = cat; } }
+                        if (topCat !== ch.fav && (topVal - favCount) >= 2) {
+                            const p = 0.28 * state.influenceFactor + 0.12;
+                            if (Math.random() < p) ch.fav = topCat;
+                        }
+                    });
+
+                    state.simulationResults.push(roundState);
+                }
+                document.getElementById('nextBtn').disabled = false;
+                document.getElementById('questions').style.display = 'none';
+            }
+
+            function updateGraphState(index) {
+                state.currentStateIndex = index;
+                const roundIndex = Math.floor(index / 2);
+                const phase = index % 2;
+                drawEdges();
+                characters.forEach(ch => {
+                    const nd = document.getElementById('node-' + ch.id);
+                    if (!nd) return;
+                    const fb = nd.querySelector('.feedback');
+                    nd.classList.remove('disgust', 'pulse');
+                    const oldBadge = nd.querySelector('.content-badge');
+                    if (oldBadge) oldBadge.remove();
+                    const rs = state.simulationResults[roundIndex] ? state.simulationResults[roundIndex][ch.id] : null;
+                    if (!rs) { if (fb) fb.classList.remove('show'); return; }
+                    if (phase === 0) {
+                        const b = document.createElement('div'); b.className = 'content-badge'; b.textContent = rs.content || '';
+                        if (rs.fromNeighbor) b.classList.add('from-neighbor');
+                        nd.appendChild(b); requestAnimationFrame(() => b.classList.add('visible'));
+                        if (ch.isStudent) { nd.classList.add('pulse'); highlightEdges(ch.id, true, true); setTimeout(() => nd.classList.remove('pulse'), 700); }
+                        if (fb) fb.classList.remove('show');
+                    } else {
+                        if (fb) { fb.textContent = rs.reaction || ''; fb.classList.add('show'); }
+                        if (rs.reaction === '🤢' || rs.reaction === '☠️') nd.classList.add('disgust');
+                    }
+                    const favEl = document.getElementById('fav-' + ch.id);
+                    if (favEl) { const favEmoji = (categories[ch.fav] && categories[ch.fav][0]) ? categories[ch.fav][0] : '✨'; favEl.textContent = `علاقه‌مندی: ${favEmoji}`; }
+                });
+
+                const rl = document.getElementById('roundLabel');
+                if (state.simulationResults.length) {
+                    const humanRound = Math.floor(index / 2) + 1;
+                    const phaseText = (phase === 0) ? 'محتوا' : 'واکنش';
+                    rl.textContent = `نوبت ${humanRound} / ${state.simulationResults.length} — ${phaseText}`;
+                } else rl.textContent = '';
+                const maxIndex = state.simulationResults.length * 2 - 1;
+                const nextBtn = document.getElementById('nextBtn'); nextBtn.disabled = index >= maxIndex;
+                if (index === maxIndex) showResultModal(); else resultModal.style.display = 'none';
+            }
+            window.updateGraphState = updateGraphState;
+            window.simulateRounds = simulateRounds;
+
+            // result modal
+            function showResultModal() {
+                const counts = {};
+                for (const r of state.simulationResults) {
+                    for (const uid in r) {
+                        const c = r[uid];
+                        if (!c || !c.category) continue;
+                        counts[c.category] = (counts[c.category] || 0) + 1;
+                    }
+                }
+                const order = ['آشپزی', 'حیوانات', 'موسیقی', 'هنر و سرگرمی', 'سیاست', 'عکاسی'];
+                const labels = order.filter(l => counts[l]);
+                const values = labels.map(l => counts[l]);
+                const total = values.reduce((s, v) => s + v, 0) || 1;
+                const canvas = document.getElementById('pieChart');
+                const dpr = window.devicePixelRatio || 1; const cw = 300, ch = 200;
+                canvas.width = cw * dpr; canvas.height = ch * dpr; canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+                const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cw, ch);
+                let start = 0;
+                labels.forEach(lab => {
+                    const v = counts[lab] || 0;
+                    const ang = v / total * Math.PI * 2;
+                    ctx.beginPath(); ctx.moveTo(cw / 2, ch / 2);
+                    ctx.arc(cw / 2, ch / 2, Math.min(cw, ch) / 2 - 8, start, start + ang);
+                    ctx.closePath(); ctx.fillStyle = categoryColors[lab] || '#888'; ctx.fill();
+                    start += ang;
+                });
+                legendListEl.innerHTML = '';
+                order.forEach(cat => {
+                    const cnt = counts[cat] || 0;
+                    const item = document.createElement('div'); item.className = 'legend-item';
+                    item.innerHTML = `<span class="legend-swatch" style="background:${categoryColors[cat] || '#777'}"></span><span style="color:#eaf7fb">${cat} — ${cnt} (${Math.round(cnt / total * 100)}%)</span>`;
+                    legendListEl.appendChild(item);
+                });
+                const mode = state.modeName || '—'; resultModeEl.textContent = `مود: ${mode}`;
+                let qHtml = ''; if (mode === 'شباهت کامل') {
+                    qHtml += `<div style="margin-bottom:6px;color:var(--muted)"><strong>یادگیری شبکه:</strong> مشاهده کن که چگونه همگرایی رخ می‌دهد.</div>`;
+                    qHtml += `<ol style="padding-left:18px;margin:0">
+                        <li>دقت کردی که محتوای دوستان اکثرا شبیه به هم بود؟</li>
+                        <li>کدوم کاربر بیشتر شبیه دوستاش شد؟</li>
+                        <li>به نظرت این مود که همه تحت تاثیر مطلق دوستشون باشند خوبه یا بده؟؟</li>
+                        <li>فکر نمیکنی از یه زمانی به بعد همه محتواها تکراری و خسته‌کننده میشن؟</li>
+                        </ol>`;
+                }
+                else if (mode === 'تنوع کامل') {
+                    qHtml += `<div style="margin-bottom:6px;color:var(--muted)"><strong>یادگیری شبکه:</strong> تنوع چگونه کشف محتوا را بالا می‌برد؟</div>`;
+                    qHtml += `<ol style="padding-left:18px;margin:0">
+                        <li>آیا کاربران محتوای جدید بیشتری دیدند؟</li>
+                        <li>به نظر میاد این حالت فقط برای آدمای تنوع‌طلب جواب میده؛نه؟</li>
+                        <li>بهترین حرکت ترکیب مود تنوع و مود شباهت هست، اونم به روش گراف وزن‌دار</li>
+                        </ol>`;
+                }
+                else {
+                    qHtml += `<div style="margin-bottom:6px;color:var(--muted)"><strong>یادگیری شبکه:</strong> تعادل چطور کیفیت و تنوع را متعادل می‌کند؟</div>`;
+                    qHtml += `<ol style="padding-left:18px;margin:0">
+                        <li>این حالت در دنیای واقعی بیشتر استفاده میشه؛ دلیلشو میدونی؟</li>
+                        <li>به نظر میاد کاربرانی که دوست بیشتری دارن، این حالت رو بیشتر میپسندن؛ نظری داری؟</li>
+                        <li>حالا که فهمیدیم سیستم های قبلی خسته‌کننده بودن، به نظرت تو این حالت چطوری جلوی خستگی کاربرا رو گرفتیم؟</li>
+                        </ol>`;
+                }
+                resultQuestionsEl.innerHTML = qHtml; resultModal.style.display = 'block';
+            }
+
+            // UI wiring
+            document.getElementById('simulateBtn').addEventListener('click', () => {
+                const active = document.querySelector('.mode-item.active');
+                const inf = parseFloat(active ? active.getAttribute('data-val') : 1);
+                const modeName = active ? (active.querySelector('.title')?.textContent || 'مود') : 'مود';
+                state.influenceFactor = inf; state.modeName = modeName;
+                document.getElementById('nextBtn').disabled = true;
+                simulateRounds(6, inf, modeName);
+                updateGraphState(0);
+                renderFavorites();
+            });
+
+            document.querySelectorAll('.mode-item').forEach(it => { it.addEventListener('click', () => { document.querySelectorAll('.mode-item').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-checked', 'false'); }); it.classList.add('active'); it.setAttribute('aria-checked', 'true'); }); });
+
+            document.getElementById('nextBtn').addEventListener('click', () => { const maxIndex = state.simulationResults.length * 2 - 1; if (state.currentStateIndex < maxIndex) updateGraphState(state.currentStateIndex + 1); });
+
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                const keys = Object.keys(categories);
+                characters.forEach(ch => { const pick = keys[Math.floor(Math.random() * keys.length)]; ch.fav = pick; ch.history = []; ch.exposures = {}; ch.deactivated = false; });
+                drawNodes(); drawEdges(); renderFavorites();
+                state.simulationResults = []; state.currentStateIndex = 0;
+                document.getElementById('roundLabel').textContent = ''; document.getElementById('nextBtn').disabled = true; document.getElementById('questions').style.display = 'none';
+            });
+
+            document.getElementById('helpBtn').addEventListener('click', () => helpModal.style.display = 'block');
+            document.getElementById('closeHelpModalBtn').addEventListener('click', () => helpModal.style.display = 'none');
+            document.getElementById('closeResult').addEventListener('click', () => resultModal.style.display = 'none');
+
+            function renderFavorites() {
+                const ctn = document.getElementById('favoritesList'); let html = '';
+                for (const cat in categories) html += `<div class="cat"><strong>${cat}:</strong> ${categories[cat].join(' ')}</div>`;
+                ctn.innerHTML = html;
+            }
+
+            // responsive scaling for graph-inner: ensure graph always visible
+            function rescaleGraphInner() {
+                const container = document.querySelector('.graph-surface'); const inner = graphInner;
+                const logicalW = inner.clientWidth, logicalH = inner.clientHeight;
+                const cw = container.clientWidth, ch = container.clientHeight;
+                const scale = Math.min(1, cw / logicalW, ch / logicalH);
+                inner.style.transform = `scale(${scale})`;
+                const extraLeft = Math.max(0, (cw - logicalW * scale) / 2);
+                const extraTop = Math.max(0, (ch - logicalH * scale) / 2);
+                inner.style.left = extraLeft + 'px';
+                inner.style.top = extraTop + 'px';
+                svg.setAttribute('width', inner.clientWidth);
+                svg.setAttribute('height', inner.clientHeight);
+            }
+
+            function init() {
+                characters.forEach(ch => { ch.history = ch.history || []; ch.exposures = ch.exposures || {}; ch.deactivated = ch.deactivated || false; });
+                drawNodes(); drawEdges(); renderFavorites();
+                document.getElementById('nextBtn').disabled = true;
+                legendInit();
+                rescaleGraphInner();
+                window.addEventListener('resize', throttle(() => { rescaleGraphInner(); drawEdges(); }, 120));
+                // hide tooltip on outside click (helpful on mobile)
+                document.addEventListener('click', (e) => {
+                    const t = document.getElementById('tooltip');
+                    if (!t) return;
+                    if (t.style.display === 'block') {
+                        const isInside = t.contains(e.target) || e.target.closest('.node') || e.target.closest('.mode-item');
+                        if (!isInside) hideTooltip();
+                    }
+                });
+            }
+
+            function legendInit() {
+                legendListEl.innerHTML = '';
+                ['آشپزی', 'حیوانات', 'موسیقی', 'هنر و سرگرمی', 'سیاست', 'عکاسی'].forEach(cat => {
+                    const item = document.createElement('div'); item.className = 'legend-item';
+                    item.innerHTML = `<span class="legend-swatch" style="background:${categoryColors[cat] || '#777'}"></span><span style="color:#eaf7fb">${cat}</span>`;
+                    legendListEl.appendChild(item);
+                });
+            }
+
+            init();
+
+            // throttle helper
+            function throttle(fn, wait) { let last = 0; return function (...args) { const now = Date.now(); if (now - last >= wait) { last = now; fn.apply(this, args); } }; }
+
+        })();
+
+
+    </script>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-/* css/styles.css - dark navy theme, final adjustments */
+/* css/styles.css - dark theme, responsive improvements */
 
 /* colors and variables */
 :root {
@@ -12,8 +12,8 @@
     --edge: #183040;
     --edge-a: #60a5fa;
     --edge-b: #f59e0b;
-    --panel-width: 240px;
-    --shadow: rgba(5, 6, 7, 0.6);
+    --panel-width: 260px;
+    --shadow: rgba(2, 6, 23, 0.6);
 }
 
 /* base */
@@ -35,14 +35,15 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    padding: 12px 16px
+    padding: 10px 12px
 }
 
 .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px
+    gap: 12px;
+    padding: 6px 0
 }
 
 .topbar h1 {
@@ -54,7 +55,8 @@ body {
 .controls {
     display: flex;
     gap: 8px;
-    align-items: center
+    align-items: center;
+    flex-wrap: wrap
 }
 
 .btn {
@@ -88,19 +90,19 @@ body {
     flex: 1;
     display: block;
     position: relative;
-    margin-top: 12px
+    margin-top: 10px
 }
 
-/* canvas area centered and with left/right margins (increase to avoid panel overlap) */
+/* canvas area centered with larger left/right margins on desktop to avoid panel overlap */
 .canvas-wrap {
     position: fixed;
     inset: 72px 80px 20px 80px;
-    /* larger left/right margins to center and avoid panel overlap */
+    /* desktop: big margins */
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
     border-radius: 12px;
     box-shadow: 0 12px 36px var(--shadow);
-    padding: 30px;
-    overflow: hidden
+    padding: 12px;
+    overflow: hidden;
 }
 
 .graph {
@@ -109,7 +111,7 @@ body {
     display: block
 }
 
-/* small floating panel (top-right) with increased spacing & line-height */
+/* floating panel (desktop). Hidden on small screens */
 .panel {
     position: fixed;
     top: 84px;
@@ -240,13 +242,13 @@ body {
 
 /* star */
 .star {
-    font-size: 18px;
+    font-size: 12px;
     fill: var(--highlight);
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6)
 }
 
-/* hover behaviour: no translate/scale to avoid jitter.
-   just change stroke and a soft shadow for feedback */
+/* hover behaviour: avoid translate/scale to prevent jitter on mobile.
+   Just change stroke/shadow for feedback. */
 svg g {
     cursor: default;
 }
@@ -260,13 +262,46 @@ svg g.clickable:hover rect {
     filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.45));
 }
 
-/* responsive */
+/* small screens: hide panel, reduce side margins, enlarge nodes and labels for touch */
 @media (max-width:900px) {
     .panel {
         display: none
     }
 
     .canvas-wrap {
-        inset: 92px 12px 12px 12px
+        inset: 84px 18px 16px 18px
     }
+
+    .node-label {
+        font-size: 14px
+    }
+
+    .btn {
+        padding: 10px 14px;
+        font-size: 15px
+    }
+}
+
+/* very small screens / phones */
+@media (max-width:700px) {
+    .canvas-wrap {
+        inset: 84px 12px 12px 12px
+    }
+
+    .node-label {
+        font-size: 15px
+    }
+
+    .btn {
+        padding: 12px 14px;
+        font-size: 10px;
+        border-radius: 12px
+    }
+
+
+    .topbar h1 {
+        font-size: 16px
+    }
+
+
 }

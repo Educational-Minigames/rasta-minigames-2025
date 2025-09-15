@@ -1,31 +1,30 @@
-// js/app.js - final version (v2, adjusted per last requests)
-// - u1 and u4 connected also to c5
-// - hover no-jitter, panel spacing respected, content nodes shifted left from right edge
-// - stage 3 pre-highlighting + persistent compare modal
+// js/app.js - responsive final
+// - mobile layout: users top row, contents bottom row (centered); larger touch targets
+// - desktop layout: users left, contents right with reserved right space for panel
+// - u1 and u4 connected to c5 (as requested)
+// - hover/touch no jitter; pre-highlighting in stage 3; reset clears strokes/markers
+
 (function(){
   'use strict';
   document.addEventListener('DOMContentLoaded', ()=>{
 
-    // ---------- data: u1 & u2 similar; u3 & u4 disjoint; additionally u1 & u4 connect to c5 ----------
+    // ---------- data (u1 & u2 similar; u3 & u4 disjoint; u1 & u4 also connect to c5) ----------
     const users = [
-      {id:'u1', label:'آریا', img:'png/001-user.png'},
-      {id:'u2', label:'بهار', img:'png/004-user.png'},
-      {id:'u3', label:'کاوه', img:'png/002-user.png'},
-      {id:'u4', label:'مینا', img:'png/003-user.png'}
+      {id:'u1', label:'احسان', img:'png/001-user.png'},
+      {id:'u2', label:'ترنـم', img:'png/004-user.png'},
+      { id: 'u3', label: 'مینا', img: 'png/003-user.png' },
+      {id:'u4', label:'پویان', img:'png/002-user.png'}
+      
     ];
     const contents = [
       {id:'c1', label:'دونات', img:'png/001-content.png'},
-      {id:'c2', label:'ساندویچ', img:'png/002-content.png'},
+      {id:'c2', label:'هات داگ', img:'png/002-content.png'},
       {id:'c3', label:'پیتــزا', img:'png/003-content.png'},
       {id:'c4', label:'برگر', img:'png/004-content.png'},
       {id:'c5', label:'کوکی', img:'png/005-content.png'}
     ];
 
-    // edges:
-    // u1,u2 share c1,c2 -> similar
-    // u3 -> c3 only
-    // u4 -> c4 only
-    // additionally u1->c5 and u4->c5 (user requested)
+    // edges (including u1->c5 and u4->c5)
     const edges = [
       ['u1','c1'], ['u1','c2'], ['u1','c5'],
       ['u2','c1'], ['u2','c2'],
@@ -33,7 +32,7 @@
       ['u4','c4'], ['u4','c5']
     ];
 
-    // adjacency maps
+    // adjacency
     const adjUser = new Map(); const adjContent = new Map();
     users.forEach(u=>adjUser.set(u.id,new Set()));
     contents.forEach(c=>adjContent.set(c.id,new Set()));
@@ -61,33 +60,64 @@
     let edgesGroup = null, nodesGroup = null, markersGroup = null;
     let activeCompare = {pairA:null, pairB:null};
 
+    // node sizing (will be adapted for mobile)
+    let NODE_USER_SIZE = 56;    // rect size for user (desktop)
+    let NODE_CONTENT_W = 64;    // content rect width (desktop)
+    let NODE_CONTENT_H = 48;    // content rect height (desktop)
+    let IMG_USER = 48;          // avatar size
+    let IMG_CONTENT = 40;       // content icon size
+
     const NS = 'http://www.w3.org/2000/svg';
     function create(tag){ return document.createElementNS(NS, tag); }
     function set(el, attrs){ for(const k in attrs) el.setAttribute(k, attrs[k]); }
 
-    // layout: reserve more right space so content nodes are well left from the right edge (avoid panel overlap)
+    // compute layout, responsive
     function layout(){
       const WIDTH = svg.clientWidth || 1200;
       const HEIGHT = svg.clientHeight || 720;
       svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
       return {WIDTH, HEIGHT};
     }
+
     function computePositions(dim){
-      const panel = document.querySelector('.panel');
-      const panelWidth = panel ? (parseInt(getComputedStyle(panel).getPropertyValue('width')) || 260) : 260;
-      const leftMargin = 140;
-      // reserve more right space (panel + extra) so content nodes shift left
-      const rightReserve = panelWidth + 140;
-      const leftX = leftMargin;
-      const rightX = Math.max(dim.WIDTH - rightReserve, dim.WIDTH - 240);
-      const padding = 80;
-      const uyStep = (dim.HEIGHT - 2*padding) / Math.max(1, users.length - 1);
-      const cyStep = (dim.HEIGHT - 2*padding) / Math.max(1, contents.length - 1);
-      users.forEach((u,i)=> u.pos = {x:leftX, y: padding + i*uyStep});
-      contents.forEach((c,i)=> c.pos = {x:rightX, y: padding + i*cyStep});
+      // adapt node sizes for small screens
+      const small = dim.WIDTH < 700;
+      if(small){
+        NODE_USER_SIZE = 64;
+        NODE_CONTENT_W = 72; NODE_CONTENT_H = 56;
+        IMG_USER = 56; IMG_CONTENT = 48;
+      } else {
+        NODE_USER_SIZE = 56;
+        NODE_CONTENT_W = 64; NODE_CONTENT_H = 48;
+        IMG_USER = 48; IMG_CONTENT = 40;
+      }
+
+      // choose layout: mobile => top/bottom rows; desktop => left/right columns
+      if(dim.WIDTH < 700){
+        // mobile layout: users top row, contents bottom row centered
+        const margin = 20;
+        const usableW = dim.WIDTH - 2*margin;
+        const uStep = usableW / Math.max(1, users.length - 1);
+        const cStep = usableW / Math.max(1, contents.length - 1);
+        const topY = 120;
+        const bottomY = dim.HEIGHT - 140;
+        users.forEach((u,i)=> u.pos = {x: margin + i*uStep, y: topY});
+        contents.forEach((c,i)=> c.pos = {x: margin + i*cStep, y: bottomY});
+      } else {
+        // desktop layout: users left column, contents right column; reserve space for panel on the right
+        const panel = document.querySelector('.panel');
+        const panelWidth = panel ? (parseInt(getComputedStyle(panel).getPropertyValue('width')) || 260) : 260;
+        const leftX = 140;
+        const rightX = Math.max(dim.WIDTH - (panelWidth + 120), dim.WIDTH - 240); // push content left of panel
+        const padding = 90;
+        const uyStep = (dim.HEIGHT - 2*padding) / Math.max(1, users.length - 1);
+        const cyStep = (dim.HEIGHT - 2*padding) / Math.max(1, contents.length - 1);
+        users.forEach((u,i)=> u.pos = {x:leftX, y: padding + i*uyStep});
+        contents.forEach((c,i)=> c.pos = {x:rightX, y: padding + i*cyStep});
+      }
     }
 
-    // draw graph
+    // draw graph (uses current node size variables)
     function draw(){
       svg.innerHTML = '';
       activeCompare = {pairA:null, pairB:null};
@@ -101,7 +131,18 @@
         const cc = contents.find(x=>x.id===c);
         if(!uu || !cc) return;
         const line = create('line');
-        set(line, {x1: uu.pos.x + 32, y1: uu.pos.y, x2: cc.pos.x - 32, y2: cc.pos.y});
+        // offsets depend on layout (left-right) or mobile (rows)
+        const small = dim.WIDTH < 700;
+        let x1 = uu.pos.x + (small ? 0 : (NODE_USER_SIZE/2));
+        let y1 = uu.pos.y;
+        let x2 = cc.pos.x - (small ? 0 : (NODE_CONTENT_W/2));
+        let y2 = cc.pos.y;
+        // For mobile top/bottom, connect centers
+        if(small){
+          x1 = uu.pos.x; y1 = uu.pos.y + (NODE_USER_SIZE/2) - 6;
+          x2 = cc.pos.x; y2 = cc.pos.y - (NODE_CONTENT_H/2) + 6;
+        }
+        set(line, {x1, y1, x2, y2});
         line.classList.add('edge'); line.dataset.u = u; line.dataset.c = c;
         edgesGroup.appendChild(line);
       });
@@ -110,12 +151,14 @@
       users.forEach(u=>{
         const g = create('g'); g.dataset.id = u.id; g.dataset.type = 'user'; g.classList.add('clickable');
         set(g, {transform:`translate(${u.pos.x},${u.pos.y})`});
-        const rect = create('rect'); set(rect,{x:-28,y:-28,width:56,height:56,rx:12}); rect.classList.add('node-rect');
-        const img = create('image'); img.setAttributeNS('http://www.w3.org/1999/xlink','href', u.img); set(img,{x:-24,y:-24,width:48,height:48});
-        const label = create('text'); label.classList.add('node-label'); set(label,{x:0,y:44}); label.textContent = u.label;
+        const half = NODE_USER_SIZE/2;
+        const rect = create('rect'); set(rect,{x:-half,y:-half,width:NODE_USER_SIZE,height:NODE_USER_SIZE,rx:Math.round(half*0.35)}); rect.classList.add('node-rect');
+        const img = create('image'); img.setAttributeNS('http://www.w3.org/1999/xlink','href', u.img); set(img,{x:-(IMG_USER/2),y:-(IMG_USER/2),width:IMG_USER,height:IMG_USER});
+        const label = create('text'); label.classList.add('node-label'); set(label,{x:0,y:half + 18}); label.textContent = u.label;
         g.appendChild(rect); g.appendChild(img); g.appendChild(label);
         nodesGroup.appendChild(g);
 
+        // hover -> panel
         g.addEventListener('mouseenter', ()=> showConnectionsInPanel(u.id));
         g.addEventListener('mouseleave', ()=> clearPanelDetails());
       });
@@ -124,9 +167,9 @@
       contents.forEach(c=>{
         const g = create('g'); g.dataset.id = c.id; g.dataset.type = 'content'; g.classList.add('clickable');
         set(g, {transform:`translate(${c.pos.x},${c.pos.y})`});
-        const rect = create('rect'); set(rect,{x:-32,y:-24,width:64,height:48,rx:10}); rect.classList.add('node-rect');
-        const img = create('image'); img.setAttributeNS('http://www.w3.org/1999/xlink','href', c.img); set(img,{x:-20,y:-20,width:40,height:40});
-        const label = create('text'); label.classList.add('node-label'); set(label,{x:0,y:40}); label.textContent = c.label;
+        const rect = create('rect'); set(rect,{x:-(NODE_CONTENT_W/2),y:-(NODE_CONTENT_H/2),width:NODE_CONTENT_W,height:NODE_CONTENT_H,rx:10}); rect.classList.add('node-rect');
+        const img = create('image'); img.setAttributeNS('http://www.w3.org/1999/xlink','href', c.img); set(img,{x:-(IMG_CONTENT/2),y:-(IMG_CONTENT/2)-2,width:IMG_CONTENT,height:IMG_CONTENT});
+        const label = create('text'); label.classList.add('node-label'); set(label,{x:0,y:(NODE_CONTENT_H/2) + 18}); label.textContent = c.label;
         g.appendChild(rect); g.appendChild(img); g.appendChild(label);
         nodesGroup.appendChild(g);
 
@@ -136,13 +179,22 @@
 
       svg.appendChild(edgesGroup); svg.appendChild(nodesGroup); svg.appendChild(markersGroup);
 
-      Array.from(nodesGroup.querySelectorAll('g.clickable')).forEach(g=> g.addEventListener('click', onNodeClick));
-      svg.onclick = function(e){ if(e.target === svg){ resetSelectionVisuals(); selected = []; updateStatus(); counterEl.textContent = 'تعداد مشترک: -'; } };
+      // attach click/touch handler
+      Array.from(nodesGroup.querySelectorAll('g.clickable')).forEach(g=> {
+        g.addEventListener('click', onNodeClick);
+        // enable touch on mobile (click works but ensure better responsiveness)
+        g.addEventListener('touchstart', function(e){ e.stopPropagation(); /* allow click handler to run */ }, {passive:true});
+      });
+
+      // click empty area to reset
+      svg.onclick = function(e){
+        if(e.target === svg){ resetSelectionVisuals(); selected = []; updateStatus(); counterEl.textContent = 'تعداد مشترک: -'; }
+      };
 
       selected = []; refreshVisuals(); updateStatus('رسم کامل شد');
     }
 
-    // interactions
+    // node click
     function onNodeClick(ev){
       ev.stopPropagation();
       const g = ev.currentTarget; const id = g.dataset.id; const type = g.dataset.type;
@@ -159,13 +211,15 @@
         }
         selected.push(id);
       }
-      clearPairStrokeStyles(); activeCompare = {pairA:null, pairB:null};
+
+      // clear previous final compare visuals (user started new selection)
+      clearPairStrokeStyles(); activeCompare = {pairA:null,pairB:null};
       refreshVisuals(); updateStatus();
     }
 
     function getType(id){ return id && id.startsWith('u') ? 'user' : 'content'; }
 
-    // refresh visuals (handles stage3 pre-highlighting)
+    // refresh visuals: auto highlighting for stage1/2, pre-show for stage3, persistent for final compare
     function refreshVisuals(){
       if(!nodesGroup || !edgesGroup || !markersGroup) return;
       nodesGroup.querySelectorAll('rect').forEach(r=> { r.classList.remove('node-selected','common-highlight'); r.style.stroke=''; r.style.strokeWidth=''; });
@@ -176,11 +230,13 @@
         const g = nodesGroup.querySelector(`g[data-id='${id}']`); if(!g) return; const rect = g.querySelector('rect'); if(rect) rect.classList.add('node-selected');
       });
 
+      // stage 1 & 2: when exactly 2 selected show their commons
       if((stage === 1 || stage === 2) && selected.length === 2){
         const commons = computeCommonNeighbors(selected[0], selected[1]);
         highlightCommonsAuto(commons);
       }
 
+      // stage 3: pre-show pairs
       if(stage === 3){
         if(selected.length >= 2){
           const a = selected[0], b = selected[1];
@@ -197,6 +253,7 @@
         }
       }
 
+      // persist final compare if done
       if(activeCompare.pairA) renderCompareHighlights(activeCompare.pairA,1);
       if(activeCompare.pairB) renderCompareHighlights(activeCompare.pairB,2);
     }
@@ -206,15 +263,17 @@
       list.forEach(id=>{
         const g = nodesGroup.querySelector(`g[data-id='${id}']`); if(!g) return;
         const rect = g.querySelector('rect'); if(rect) rect.classList.add('common-highlight');
-        const pos = getNodePos(id); if(pos){ const star = create('text'); set(star,{x:pos.x+45, y: pos.y+5, 'text-anchor':'middle'}); star.textContent='★'; star.classList.add('star'); markersGroup.appendChild(star); }
-        edgesGroup.querySelectorAll('line').forEach(l=>{
-          if((selected.includes(l.dataset.u) && list.includes(l.dataset.c)) || (selected.includes(l.dataset.c) && list.includes(l.dataset.u))) l.classList.add('edge-emph-a');
-        });
+        const pos = getNodePos(id); if (pos) {
+          const star = create('text');
+          set(star, { x: pos.x, y: pos.y-26, 'text-anchor': 'middle' });
+          star.textContent = '★'; star.classList.add('star'); markersGroup.appendChild(star);
+        }
+        edgesGroup.querySelectorAll('line').forEach(l=>{ if((selected.includes(l.dataset.u) && list.includes(l.dataset.c)) || (selected.includes(l.dataset.c) && list.includes(l.dataset.u))) l.classList.add('edge-emph-a'); });
       });
       counterEl.textContent = `تعداد مشترک: ${list.length} → شباهت ${list.length}`;
     }
 
-    // temp pre-highlight for pairs (before compare)
+    // pre-highlight pair (temp)
     function renderPairTemp(pairData, which){
       if(!pairData) return;
       const cls = which === 1 ? 'edge-emph-a' : 'edge-emph-b';
@@ -234,7 +293,6 @@
       });
     }
 
-    // compute common neighbors
     function computeCommonNeighbors(a,b){
       const ta = getType(a), tb = getType(b); const commons = [];
       if(ta === 'user' && tb === 'user'){
@@ -249,8 +307,8 @@
 
     function getNodePos(id){
       if(!id) return null;
-      if(id.startsWith('u')){ const u = users.find(x=>x.id===id); return u?u.pos:null; }
-      const c = contents.find(x=>x.id===id); return c?c.pos:null;
+      if(id.startsWith('u')){ const u = users.find(x=>x.id===id); return u ? u.pos : null; }
+      const c = contents.find(x=>x.id===id); return c ? c.pos : null;
     }
 
     // persistent compare highlights
@@ -278,19 +336,19 @@
       if(stage !== 3){ openCompareModal('خطا', '<p>برای استفاده از مقایسهٔ دو جفت، ابتدا وارد <strong>مرحلهٔ ۳</strong> شو.</p>'); return; }
       if(selected.length !== 4){ openCompareModal('خطا', '<p>در مرحلهٔ ۳ باید دقیقاً دو جفت (۴ نود) انتخاب شده باشد.</p>'); return; }
       const a1 = selected[0], a2 = selected[1], b1 = selected[2], b2 = selected[3];
-      if(getType(a1) !== getType(a2) || getType(b1) !== getType(b2)){ openCompareModal('خطا', '<p>هر جفت باید از یک نوع باشد (هر دو کاربر یا هر دو محتوا).</p>'); return; }
+      if(getType(a1) !== getType(a2) || getType(b1) !== getType(b2)){ openCompareModal('خطا', '<p>هر جفت باید از یک نوع باشد.</p>'); return; }
 
       const commonsA = computeCommonNeighbors(a1,a2);
       const commonsB = computeCommonNeighbors(b1,b2);
 
       activeCompare = { pairA:{a:a1,b:a2,commons:commonsA}, pairB:{a:b1,b:b2,commons:commonsB} };
-
       refreshVisuals();
 
-      let title = 'نتیجهٔ مقایسه'; let body = '';
+      let title = 'نتیجهٔ مقایسه'; let body='';
       if(commonsA.length === commonsB.length) body = `<p>هر دو جفت به یک اندازه شباهت دارند: ${commonsA.length} مشترک.</p>`;
-      else if(commonsA.length > commonsB.length) body = `<p>جفت اول بیشتر است (${commonsA.length} در مقابل ${commonsB.length}).</p>` + explainWhy(a1,a2,commonsA,1);
-      else body = `<p>جفت دوم بیشتر است (${commonsB.length} در مقابل ${commonsA.length}).</p>` + explainWhy(b1,b2,commonsB,2);
+      else if(commonsA.length > commonsB.length) body = `<p>جفت اول بیشتر شبیه‌اند (${commonsA.length} در مقابل ${commonsB.length}).</p>` + explainWhy(a1,a2,commonsA,1);
+      else body = `<p>جفت دوم بیشتر شبیه‌اند (${commonsB.length} در مقابل ${commonsA.length}).</p>` + explainWhy(b1,b2,commonsB,2);
+
       openCompareModal(title, body);
     }
 
@@ -301,10 +359,7 @@
       return `<p>دلیل: ${names} هرکدام با این‌ها مشترک هستند: ${labels}.</p><p>لبه‌ها و قاب‌ها برای جفت ${which===1?'آبی':'نارنجی'} نمایش داده شدند.</p>`;
     }
 
-    function getLabel(id){
-      if(id.startsWith('u')){ const u = users.find(x=>x.id===id); return u?u.label:id; }
-      const c = contents.find(x=>x.id===id); return c?c.label:id;
-    }
+    function getLabel(id){ if(id.startsWith('u')){ const u = users.find(x=>x.id===id); return u?u.label:id; } const c = contents.find(x=>x.id===id); return c?c.label:id; }
 
     function openCompareModal(title, html){
       compareTitle.textContent = title;
@@ -313,7 +368,7 @@
       compareModal.setAttribute('aria-hidden','false');
     }
 
-    // panel hover details
+    // panel show/hide details on hover
     function showConnectionsInPanel(id){
       if(id.startsWith('u')){
         const conns = Array.from(adjUser.get(id) || []);
@@ -327,11 +382,11 @@
         panelDetails.innerHTML = `<p>این محتوا توسط:</p>${items}`;
       }
     }
-    function clearPanelDetails(){ panelDetails.innerHTML = `<p></p>`; }
+    function clearPanelDetails(){ panelDetails.innerHTML = `<p>حالت: انتخاب نودها و سپس زدن «مقایسه».</p>`; }
 
     // reset helpers
     function clearPairStrokeStyles(){ if(nodesGroup) nodesGroup.querySelectorAll('rect').forEach(r=>{ r.style.stroke=''; r.style.strokeWidth=''; }); if(edgesGroup) edgesGroup.querySelectorAll('line').forEach(l=> { l.classList.remove('edge-emph-a','edge-emph-b'); }); if(markersGroup) markersGroup.innerHTML = ''; }
-    function resetSelectionVisuals(){ selected = []; activeCompare={pairA:null,pairB:null}; if(nodesGroup) nodesGroup.querySelectorAll('rect').forEach(r=> r.classList.remove('node-selected','common-highlight')); clearPairStrokeStyles(); if(markersGroup) markersGroup.innerHTML = ''; }
+    function resetSelectionVisuals(){ selected = []; activeCompare = {pairA:null,pairB:null}; if(nodesGroup) nodesGroup.querySelectorAll('rect').forEach(r=> r.classList.remove('node-selected','common-highlight')); clearPairStrokeStyles(); if(markersGroup) markersGroup.innerHTML = ''; }
 
     // UI wiring
     helpBtn.addEventListener('click', ()=>{ helpModal.classList.add('show'); helpModal.setAttribute('aria-hidden','false'); });
@@ -348,10 +403,9 @@
     function pulse(msg){ const prev = statusEl.textContent; statusEl.textContent = msg; setTimeout(()=> updateStatus(), 1400); }
     function debounce(fn, wait){ let t; return function(...args){ clearTimeout(t); t = setTimeout(()=> fn.apply(this,args), wait); }; }
 
-    // initial
+    // initial draw and responsive resize
     draw();
     setStage(1);
     window.addEventListener('resize', debounce(()=>{ draw(); setStage(stage); }, 160));
-
   }); // DOMContentLoaded
 })(); // IIFE
