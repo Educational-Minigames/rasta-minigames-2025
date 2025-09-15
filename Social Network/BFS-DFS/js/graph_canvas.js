@@ -673,7 +673,7 @@ function updateInfoPanel() {
 function bindModalAndControls() {
   const modalBackdrop = document.getElementById('modalBackdrop');
   document.getElementById('btnHelp').addEventListener('click', () => { modalBackdrop.classList.add('open'); modalBackdrop.setAttribute('aria-hidden', 'false'); });
-  document.getElementById('closeModal').addEventListener('click', () => { modalBackdrop.classList.remove('open'); modalBackdrop.setAttribute('aria-hidden', 'true'); });
+  // document.getElementById('closeModal').addEventListener('click', () => { modalBackdrop.classList.remove('open'); modalBackdrop.setAttribute('aria-hidden', 'true'); });
   document.getElementById('modalGotIt').addEventListener('click', () => { modalBackdrop.classList.remove('open'); modalBackdrop.setAttribute('aria-hidden', 'true'); });
   modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) { modalBackdrop.classList.remove('open'); modalBackdrop.setAttribute('aria-hidden', 'true'); } });
 

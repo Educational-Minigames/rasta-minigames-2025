@@ -203,7 +203,7 @@ body {
 }
 
 /* responsive */
-@media (max-width:900px) {
+@media (max-width:600px) {
     .app-header {
         height: 84px;
         padding: 10px;
@@ -214,7 +214,22 @@ body {
     }
 
     .info-floating {
+
         right: 12px;
         top: 100px;
+
+    }
+
+    .brand {
+        display: none;
+    }
+
+
+    * {
+        font-size: .7rem !important;
+    }
+
+    .canvas-container {
+        width: 200%;
     }
 }
