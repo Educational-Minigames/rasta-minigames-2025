@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<title>مینی‌گیم مکان‌یابی صدا با اسلایدر</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  canvas { border: 1px solid #e5e7eb; border-radius: 0.75rem; }
+  body { font-family: 'Tahoma', sans-serif; }
+</style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<div class="grid grid-cols-2 gap-6 w-full max-w-6xl p-6">
+
+  <!-- سمت چپ: ساعت -->
+  <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
+    <canvas id="clock" width="300" height="300" class="mb-4"></canvas>
+    <button id="startBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition mb-4">▶️ پخش</button>
+    <div class="mt-6 space-y-2 w-full">
+      <div class="p-2 bg-gray-100 rounded">Lap 1: <span id="lap1">-</span></div>
+      <div class="p-2 bg-gray-100 rounded">Lap 2: <span id="lap2">-</span></div>
+      <div class="p-2 bg-gray-100 rounded">Lap 3: <span id="lap3">-</span></div>
+    </div>
+    <div id="status" class="mt-4 text-center text-gray-600">برای شروع روی پخش کلیک کنید و لپ‌ها را با کلیک روی ساعت ثبت کنید</div>
+  </div>
+
+  <!-- سمت راست: نقشه و اسلایدر -->
+  <div class="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
+    <canvas id="map" width="400" height="400" class="mb-4 mx-auto"></canvas>
+    <div class="space-y-4 w-full">
+      <label>شعاع ۱: <span id="r1Val">500</span>
+        <input type="range" id="r1" min="500" max="3000" step="10" value="500" class="w-full accent-blue-500">
+      </label>
+      <label>شعاع ۲: <span id="r2Val">500</span>
+        <input type="range" id="r2" min="500" max="3000" step="10" value="500" class="w-full accent-green-500">
+      </label>
+      <label>شعاع ۳: <span id="r3Val">500</span>
+        <input type="range" id="r3" min="500" max="3000" step="10" value="500" class="w-full accent-purple-500">
+      </label>
+      <label>تنظیم کلی: <span id="rAllVal">0</span>
+        <input type="range" id="rAll" min="-500" max="500" step="10" value="0" class="w-full accent-red-500">
+      </label>
+    </div>
+    <div id="result" class="mt-4 font-bold text-green-600 text-center"></div>
+  </div>
+
+</div>
+
+<script>
+/* === ساعت === */
+const clockCanvas = document.getElementById("clock");
+const ctx = clockCanvas.getContext("2d");
+let angle = 0, timer = null, startTime = null, lapCount = 0;
+const laps = [];
+let gameRunning = false;
+
+function drawClock() {
+  ctx.clearRect(0,0,300,300);
+  ctx.beginPath(); ctx.arc(150,150,140,0,Math.PI*2); ctx.strokeStyle="#374151"; ctx.lineWidth=3; ctx.stroke();
+  ctx.fillStyle="#374151"; ctx.font="20px Tahoma"; ctx.textAlign="center";
+  ["12","3","6","9"].forEach((t,i)=>{
+    const positions=[[150,25],[285,155],[150,285],[15,155]][i];
+    ctx.fillText(t,positions[0],positions[1]);
+  });
+  ctx.beginPath(); ctx.moveTo(150,150);
+  const handX = 150 + 100*Math.cos(angle-Math.PI/2);
+  const handY = 150 + 100*Math.sin(angle-Math.PI/2);
+  ctx.lineTo(handX,handY); ctx.strokeStyle='#dc2626'; ctx.lineWidth=4; ctx.stroke();
+  ctx.beginPath(); ctx.arc(150,150,8,0,Math.PI*2); ctx.fillStyle='#dc2626'; ctx.fill();
+}
+
+function startClock(){
+  if(gameRunning) return;
+  gameRunning=true; angle=0; startTime=Date.now(); lapCount=0; laps.length=0;
+  ["lap1","lap2","lap3"].forEach(id=>document.getElementById(id).textContent="-");
+  document.getElementById("status").textContent="ساعت شروع شد! با کلیک روی ساعت لپ‌ها را ثبت کنید";
+  document.getElementById("startBtn").textContent="⏸️ توقف";
+  document.getElementById("startBtn").className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition mb-4";
+  if(timer) clearInterval(timer);
+  timer=setInterval(()=>{
+    const elapsed=(Date.now()-startTime)/1000;
+    angle=(elapsed/60)*2*Math.PI;
+    drawClock();
+  },50);
+
+  [2000,4000,6000].forEach((t,i)=>{
+    setTimeout(()=>{ playBeep(); },t);
+  });
+
+  setTimeout(()=>{ gameRunning=false; drawMap(); document.getElementById("status").textContent="بازی تمام شد!"; },7000);
+}
+
+function playBeep(){
+  const audioContext=new (window.AudioContext||window.webkitAudioContext)();
+  const oscillator=audioContext.createOscillator();
+  const gainNode=audioContext.createGain();
+  oscillator.connect(gainNode); gainNode.connect(audioContext.destination);
+  oscillator.frequency.value=800; oscillator.type='square';
+  gainNode.gain.setValueAtTime(0.3,audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01,audioContext.currentTime+0.3);
+  oscillator.start(audioContext.currentTime); oscillator.stop(audioContext.currentTime+0.3);
+}
+
+/* === نقشه === */
+const mapCanvas=document.getElementById("map");
+const mctx=mapCanvas.getContext("2d");
+
+const me={x:200,y:200};
+const sources=[
+  {x:200, y:140, color:'#3b82f6'},
+  {x:320, y:200, color:'#10b981'},
+  {x:200, y:380, color:'#8b5cf6'}
+];
+
+const r1=document.getElementById("r1");
+const r2=document.getElementById("r2");
+const r3=document.getElementById("r3");
+const rAll=document.getElementById("rAll");
+const r1Val=document.getElementById("r1Val");
+const r2Val=document.getElementById("r2Val");
+const r3Val=document.getElementById("r3Val");
+const rAllVal=document.getElementById("rAllVal");
+
+const scaleFactor = 0.1;
+
+function drawMap(showRed=false){
+  mctx.clearRect(0,0,400,400);
+  const masterOffset=parseInt(rAll.value);
+  const radii=[
+    parseInt(r1.value)*scaleFactor + masterOffset*scaleFactor,
+    parseInt(r2.value)*scaleFactor + masterOffset*scaleFactor,
+    parseInt(r3.value)*scaleFactor + masterOffset*scaleFactor
+  ];
+
+  sources.forEach((s,i)=>{
+    mctx.beginPath();
+    mctx.arc(s.x, s.y, radii[i], 0, Math.PI*2);
+    mctx.strokeStyle = s.color; mctx.lineWidth = 2; mctx.stroke();
+  });
+
+  sources.forEach((s,i)=>{
+    mctx.beginPath();
+    mctx.arc(s.x,s.y,8,0,Math.PI*2);
+    mctx.fillStyle=s.color; mctx.fill();
+    mctx.fillStyle='white'; mctx.font='12px Tahoma';
+    mctx.textAlign='center'; mctx.fillText((i+1).toString(),s.x,s.y+4);
+  });
+
+  const intersect = checkIntersection(radii);
+
+  // فقط وقتی درست شد، نقطه قرمز را نشان بده
+  if(intersect){
+    mctx.beginPath();
+    mctx.arc(me.x,me.y,10,0,Math.PI*2);
+    mctx.fillStyle='#dc2626'; mctx.fill();
+    mctx.fillStyle='#374151'; mctx.font='14px Tahoma';
+    mctx.textAlign='center';
+    mctx.fillText('شما',me.x,me.y-20);
+  }
+}
+
+function checkIntersection(radii){
+  let count=0;
+  sources.forEach((s,i)=>{
+    const distance=Math.sqrt(Math.pow(me.x-s.x,2)+Math.pow(me.y-s.y,2));
+    if(Math.abs(distance-radii[i])<15) count++;
+  });
+  if(count===3) { document.getElementById("result").textContent="🎯 عالی! موقعیت شما درست است"; return true;}
+  else if(count>=2) document.getElementById("result").textContent="⚠️ نزدیک هستید! کمی بیشتر تنظیم کنید";
+  else document.getElementById("result").textContent="";
+  return false;
+}
+
+[r1,r2,r3,rAll].forEach(r=>r.oninput=()=>{ 
+  r1Val.textContent=r1.value; r2Val.textContent=r2.value; r3Val.textContent=r3.value; rAllVal.textContent=rAll.value;
+  drawMap(); 
+});
+
+clockCanvas.addEventListener("click", ()=>{
+  if(!gameRunning || lapCount>=3) return;
+  const elapsed=(Date.now()-startTime)/1000;
+  lapCount++;
+  laps.push(elapsed);
+  document.getElementById("lap"+lapCount).textContent=elapsed.toFixed(2)+"s";
+  if(lapCount<3) document.getElementById("status").textContent=`لپ ${lapCount} ثبت شد.`;
+});
+
+document.getElementById("startBtn").addEventListener("click",()=>{ gameRunning?gameRunning=false:startClock(); drawClock(); });
+
+drawClock();
+drawMap();
+</script>
+</body>
+</html>
