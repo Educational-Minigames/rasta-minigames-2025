@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Echoes of History — نسخهٔ نهایی v8</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #041018;
+            --muted: #9aa6b2;
+            --accent: #ffd166;
+            --white: #eaf3ff;
+        }
+
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: linear-gradient(180deg, #02050a 0%, #041018 100%);
+            color: var(--white);
+            font-family: Vazirmatn, sans-serif
+        }
+
+        .wrap {
+            padding: 14px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+            flex-wrap: wrap
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 700
+        }
+
+        button,
+        .btn {
+            font-family: inherit;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer
+        }
+
+        .mode-switch {
+            display: inline-flex;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 999px;
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.03)
+        }
+
+        .mode-option {
+            padding: 8px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            color: var(--muted);
+            font-weight: 600
+        }
+
+        .mode-option.active {
+            background: rgba(255, 209, 102, 0.14);
+            color: var(--muted)
+        }
+
+        .stage {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 12px
+        }
+
+        /* use most of viewport for the graph */
+        .graph-wrap {
+            position: relative;
+            height: calc(100vh - 180px);
+            max-height: 900px;
+            min-height: 420px
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block
+        }
+
+        .emoji-overlay {
+            position: absolute;
+            left: 50%;
+            top: 74%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 8px;
+            z-index: 30;
+            background-color: rgba(0, 0, 20, 0.3);
+            padding: 10px 25px;
+            border-radius: 15px;
+        }
+
+        .emoji-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            cursor: pointer
+        }
+
+        .emoji-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed
+        }
+
+        .content-pill {
+
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: #ffffff;
+            font-weight: 700;
+            color: #02161b;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55)
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal {
+            background: #071018;
+            padding: 16px;
+            border-radius: 12px;
+            width: 760px;
+            max-width: 95%;
+            color: var(--white)
+        }
+
+        footer {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center
+        }
+
+        @media(max-width:1000px) {
+            .graph-wrap {
+                height: 62vh
+            }
+
+            .emoji-overlay {
+                top: 78%
+            }
+        }
+
+        @media(max-width:600px) {
+            .nav {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px
+            }
+
+            .graph-wrap {
+                height: 56vh
+            }
+
+            .emoji-overlay {
+                top: 82%
+            }
+
+            .modal {
+                max-width: 90%;
+            }
+
+            .modal div {
+                display: block;
+            }
+
+            .modal-backdrop {
+                display: inline-block;
+            }
+
+            .pie {
+                display: block !important;
+            }
+
+            .modal {
+                font-size: .6rem !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="nav">
+            <div class="title">Echoes of History — نسخهٔ نهایی</div>
+            <div style="display:flex;gap:10px;align-items:center">
+                <div class="mode-switch" id="modeSwitch">
+                    <div class="mode-option active" data-mode="random">حالت تصادفی</div>
+                    <div class="mode-option" data-mode="weighted">حالت تکراری</div>
+                </div>
+                <button id="helpBtn" class="btn">❓ راهنما</button>
+                <button id="resetBtn" class="btn">🔄 ریست بازی</button>
+            </div>
+        </div>
+
+        <div class="stage">
+            <div
+                style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+                <div style="color:var(--muted)">راند: <strong id="stepCount">0</strong> / 6 — انتخاب‌ها: <strong
+                        id="totalSelections">0</strong></div>
+            </div>
+
+            <div class="graph-wrap" id="graphWrap">
+                <!-- viewBox chosen to be wide and use viewport fully -->
+                <svg id="svg" viewBox="-6 -6 12 12" preserveAspectRatio="xMidYMid meet">
+                    <g id="edges"></g> <!-- lines and connectors go here (behind avatars) -->
+                    <g id="contentConnectors"></g> <!-- content connectors also behind avatars -->
+                    <g id="nodes"></g> <!-- avatars and bg are here -->
+                    <g id="arcLayer"></g> <!-- content pills on top -->
+                </svg>
+
+                <div class="emoji-overlay" id="emojiOverlay">
+                    <button class="emoji-btn" id="eLike">👍</button>
+                    <button class="emoji-btn" id="eNeutral">😐</button>
+                    <button class="emoji-btn" id="eDislike">👎</button>
+                </div>
+            </div>
+
+        </div>
+
+        <footer>نسخهٔ نهایی — Echoes of History</footer>
+    </div>
+
+    <div id="endModal" style="display:none" class="modal-backdrop">
+        <div class="modal">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h3>نتیجهٔ بازی</h3>
+                <div style="color:var(--muted)">حالت: <strong id="modalMode">-</strong></div>
+            </div>
+            <div class="pie" style="margin-top:12px;display:flex;gap:12px">
+                <div style="width:300px"><canvas id="modalPie" width="300" height="300"></canvas></div>
+                <div style="flex:1;color:var(--muted)">
+                    <div id="modalMessage" style="margin-bottom:8px"></div>
+                    <div id="modalSummary"></div>
+                    <div id="modalQuestions" style="margin-top:12px"></div>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                <button id="closeModal" class="btn">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // coords and edges per user
+        const userCoords = [
+            { id: 'a', x: -5, y: -1 },
+            { id: 'b', x: -3, y: 1.5 },
+            { id: 'c', x: 1.5, y: 1.8 }, // student
+            { id: 'd', x: -0.5, y: -0.3 },
+            { id: 'e', x: 4, y: -.8 }
+        ];
+        const edgePairs = [['a', 'b'], ['b', 'c'], ['d', 'b'], ['d', 'c'], ['c', 'e']];
+
+        const contentCategories = [
+            { id: 'music', label: '🎵 موسیقی', color: '#ffd166' },
+            { id: 'movie', label: '🎬 فیلم', color: '#ffb86b' },
+            { id: 'book', label: '📚 کتاب', color: '#ffd6a5' },
+            { id: 'game', label: '🎮 بازی', color: '#7ef0c0' },
+            { id: 'news', label: '📰 خبر', color: '#2aa3ff' }
+        ];
+
+        let state = { mode: 'random', step: 0, maxSteps: 6, selected: null, totalSelections: 0, likes: 0, dislikes: 0, neutrals: 0, weights: {}, history: [], shownArcs: [] };
+        contentCategories.forEach(c => state.weights[c.id] = 1);
+
+        // DOM
+        const svg = document.getElementById('svg');
+        const edgesG = document.getElementById('edges');
+        const contentConnG = document.getElementById('contentConnectors');
+        const nodesG = document.getElementById('nodes');
+        const arcLayer = document.getElementById('arcLayer');
+        const stepCount = document.getElementById('stepCount');
+        const totalSelections = document.getElementById('totalSelections');
+        const emojiOverlay = document.getElementById('emojiOverlay');
+        const eLike = document.getElementById('eLike');
+        const eNeutral = document.getElementById('eNeutral');
+        const eDislike = document.getElementById('eDislike');
+        const resetBtn = document.getElementById('resetBtn');
+        const helpBtn = document.getElementById('helpBtn');
+        const modeSwitch = document.getElementById('modeSwitch');
+        const modal = document.getElementById('endModal');
+        const modalPie = document.getElementById('modalPie');
+        const modalMode = document.getElementById('modalMode');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalSummary = document.getElementById('modalSummary');
+        const modalQuestions = document.getElementById('modalQuestions');
+        const closeModal = document.getElementById('closeModal');
+
+        function coordById(id) { return userCoords.find(u => u.id === id); }
+
+        function init() {
+            state.step = 0; state.selected = null; state.totalSelections = 0; state.likes = 0; state.dislikes = 0; state.neutrals = 0; state.history = []; state.shownArcs = [];
+            contentCategories.forEach(c => state.weights[c.id] = 1);
+            state.selected = pickNext();
+            state.history.push(state.selected);
+            pushShownContent(state.selected, false);
+            updateUI(); renderGraph(); enableEmojis(true);
+        }
+
+        function updateUI() { stepCount.textContent = state.step; totalSelections.textContent = state.totalSelections; }
+
+        function pickRandom() { return contentCategories[Math.floor(Math.random() * contentCategories.length)].id; }
+        function pickWeighted() { const entries = Object.entries(state.weights); const total = entries.reduce((s, [k, v]) => s + v, 0); let r = Math.random() * total; for (const [k, v] of entries) { if (r < v) return k; r -= v; } return entries[entries.length - 1][0]; }
+        function pickNext() { return state.mode === 'random' ? pickRandom() : pickWeighted(); }
+
+        function createContentNode(x, y, w, h, label, color, solid) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', x - w / 2); rect.setAttribute('y', y - h / 2); rect.setAttribute('rx', h * 0.5); rect.setAttribute('ry', h * 0.5);
+            rect.setAttribute('width', w); rect.setAttribute('height', h);
+            rect.setAttribute('fill', color);
+            rect.setAttribute('opacity', solid ? 1 : 0.95);
+            g.appendChild(rect);
+            const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            txt.setAttribute('x', x); txt.setAttribute('y', y + 0.02);
+            txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('dominant-baseline', 'middle');
+            txt.setAttribute('font-size', '0.35'); txt.setAttribute('fill', '#02161b');
+            txt.textContent = label;
+            g.appendChild(txt);
+            return g;
+        }
+
+        function renderGraph() {
+            edgesG.innerHTML = ''; contentConnG.innerHTML = ''; nodesG.innerHTML = ''; arcLayer.innerHTML = '';
+            // 1) draw straight, slightly bolder solid edges between users (under everything)
+            edgePairs.forEach(pair => {
+                const a = coordById(pair[0]); const b = coordById(pair[1]);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', a.x);
+                line.setAttribute('y1', -a.y);
+                line.setAttribute('x2', b.x);
+                line.setAttribute('y2', -b.y);
+                line.setAttribute('stroke', 'rgba(255,209,102,0.95)'); line.setAttribute('stroke-width', 0.045);
+                line.setAttribute('stroke-linecap', 'round');
+                edgesG.appendChild(line);
+            });
+
+            // 2) draw content connectors (also behind avatars) and content pills above them
+            const student = coordById('c');
+            const cx = student.x; const cy = -student.y - 1.05; // center for arc above student
+            const baseRadius = 2.2;
+            const n = state.shownArcs.length;
+            // Calculate angles to keep items on a slight arc and spaced out; small angle range
+            const angleStart = -3.14; const angleEnd = 0.3;
+            for (let idx = 0; idx < n; idx++) {
+                const t = n === 1 ? 0.5 : idx / (n - 1);
+                const angle = angleStart + (angleEnd - angleStart) * t;
+                const radius = baseRadius + 0.06 * (idx - n / 2); // small offset to reduce overlap
+                const x = cx + Math.cos(angle) * radius;
+                const y = cy + Math.sin(angle) * radius;
+                const item = state.shownArcs[idx];
+                // connector path: from content down to a point just above avatar top to avoid overlay
+                const attachY = -student.y + 0.34; // just above avatar top
+                const ctrlX = (x + student.x) / 2; const ctrlY = (y + attachY) / 2 - 0.25;
+                const pathD = `M ${x} ${y + 0.08} Q ${ctrlX} ${ctrlY} ${student.x} ${attachY}`;
+                const conn = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                conn.setAttribute('d', pathD);
+                conn.setAttribute('fill', 'none');
+                conn.setAttribute('stroke', item.color);
+                const recency = (idx + 1) / Math.max(1, n);
+                conn.setAttribute('stroke-width', 0.008 + 0.02 * recency); // thinner baseline, newer thicker
+                conn.setAttribute('opacity', 0.28 + 0.7 * recency);
+                conn.setAttribute('stroke-dasharray', item.solid ? '' : '0.03 0.03');
+                contentConnG.appendChild(conn);
+                // content node on arc (ensure these are above avatars)
+                const node = createContentNode(x, y, 2, .8, item.label, item.color, item.solid);
+                arcLayer.appendChild(node);
+            }
+
+            // 3) draw avatars last so they appear above connectors
+            userCoords.forEach((p, i) => {
+                // dark bg behind student, lighter for others
+                const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                bg.setAttribute('cx', p.x); bg.setAttribute('cy', -p.y); bg.setAttribute('r', 0.5);
+                bg.setAttribute('fill', (i === 2) ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.6)');
+                nodesG.appendChild(bg);
+                const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                const assetName = (i === 2) ? 'rasta-user.png' : `00${i + 1}-user.png`;
+                img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', `assets/${assetName}`);
+                img.setAttribute('x', p.x - 0.6); img.setAttribute('y', -p.y - 0.6); img.setAttribute('width', 1.2); img.setAttribute('height', 1.2);
+                if (i == 2) {
+                    img.setAttribute('width', 1.8); img.setAttribute('height', 1.8);
+                    img.setAttribute('x', p.x - 0.9); img.setAttribute('y', -p.y - 0.9);
+                }
+                img.setAttribute('style', 'border-radius:12px');
+                nodesG.appendChild(img);
+            });
+        }
+
+        function pushShownContent(catId, solid = false) {
+            const cat = contentCategories.find(c => c.id === catId);
+            state.shownArcs.push({ id: cat.id, label: cat.label, color: cat.color, solid: solid });
+            renderGraph();
+        }
+
+        function advanceAfterReaction() {
+            if (state.step >= state.maxSteps) return;
+            state.step += 1;
+            updateUI();
+            if (state.step >= state.maxSteps) {
+                endGame();
+                return;
+            }
+            state.selected = pickNext();
+            state.history.push(state.selected);
+            pushShownContent(state.selected, false);
+            state.totalSelections += 1;
+        }
+
+        function applyReaction(type) {
+            if (state.step >= state.maxSteps) return;
+            if (!state.selected && state.shownArcs.length === 0) {
+                state.selected = pickNext();
+                state.history.push(state.selected);
+                pushShownContent(state.selected, false);
+            }
+            if (type === 'like') { state.likes = (state.likes || 0) + 1; if (state.mode === 'weighted') { state.weights[state.selected] = (state.weights[state.selected] || 1) + 2; } }
+            if (type === 'dislike') { state.dislikes = (state.dislikes || 0) + 1; if (state.mode === 'weighted') { state.weights[state.selected] = Math.max(0.1, (state.weights[state.selected] || 1) - 1); } }
+            if (type === 'neutral') { state.neutrals = (state.neutrals || 0) + 1; }
+            if (state.shownArcs.length > 0) {
+                state.shownArcs[state.shownArcs.length - 1].solid = true;
+            }
+            renderGraph();
+            setTimeout(() => advanceAfterReaction(), 300);
+        }
+
+        function endGame() {
+            enableEmojis(false);
+            modal.style.display = 'flex';
+            modalMode.textContent = (state.mode === 'random') ? 'حالت تصادفی' : 'حالت تکراری';
+            modalMessage.textContent = (state.mode === 'random') ? 'دیدی؟ وقتی هیچ الگویی در نظر نگیریم، پیشنهادها بی‌معنی و اتفاقی میشن.' : 'نتیــجه رو دیدی؟ اگر فقط و فقط با توجه به تاریخچه محتواها رو بهت نشون بدم، همگی محتواها تکراری و به طبع خسته کننده میشن.. \nحالا به نظرت باید چه کار کرد که محتواها خسته کننده نباشن؟';
+            drawModalPie(); renderModalSummary();
+        }
+
+        function drawModalPie() { const ctx = modalPie.getContext('2d'); ctx.clearRect(0, 0, modalPie.width, modalPie.height); const counts = contentCategories.reduce((o, c) => { o[c.id] = state.history.filter(x => x === c.id).length; return o; }, {}); const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1; let start = 0; contentCategories.forEach(c => { const v = counts[c.id] || 0; if (v <= 0) return; const angle = (v / total) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(150, 150); ctx.arc(150, 150, 120, start, start + angle); ctx.closePath(); ctx.fillStyle = c.color; ctx.fill(); start += angle; }); }
+
+        function renderModalSummary() {
+            const counts = contentCategories.map(c => ({ label: c.label, count: state.history.filter(x => x === c.id).length })).filter(x => x.count > 0); let html = '<div>محتواهای نمایش‌داده‌شده:</div><ul style="padding-left:18px">'; counts.forEach(it => html += `<li>${it.label} — ${it.count} بار</li>`); html += '</ul>'; modalSummary.innerHTML = html; modalQuestions.innerHTML = ''; if (state.mode === 'weighted') {
+                const q = document.createElement('div'); q.innerHTML = 'این حالتِ <strong>حالت تکراری</strong> بود — به نظرت اینکه پیشنهادها تکراری بشن خسته‌کننده‌ست؟ 😴'; const b = document.createElement('div'); b.style.marginTop = '8px'; const yes = document.createElement('button'); yes.className = 'btn'; yes.textContent = 'خیلی خسته‌کننده';
+                //  b.appendChild(yes);
+                q.appendChild(b); modalQuestions.appendChild(q);
+            } else {
+
+                const q = document.createElement('div'); q.innerHTML = 'این حالتِ <strong>حالت تصادفی</strong> بود — به نظرت پیشنهادها بی‌ربط یا شلخته بودند؟ 🤷‍♂️'; const b = document.createElement('div'); b.style.marginTop = '8px'; const a = document.createElement('button'); a.className = 'btn'; a.textContent = 'آره';
+                // b.appendChild(a);
+                q.appendChild(b); modalQuestions.appendChild(q);
+            }
+        }
+
+        function hideEmojis() { emojiOverlay.style.display = 'none'; }
+        function showEmojis() { emojiOverlay.style.display = 'flex'; }
+        function enableEmojis(enabled) { eLike.disabled = !enabled; eNeutral.disabled = !enabled; eDislike.disabled = !enabled; if (enabled) showEmojis(); else hideEmojis(); }
+
+        // handlers
+        eLike.addEventListener('click', () => applyReaction('like'));
+        eNeutral.addEventListener('click', () => applyReaction('neutral'));
+        eDislike.addEventListener('click', () => applyReaction('dislike'));
+        resetBtn.addEventListener('click', () => { init(); enableEmojis(true); modal.style.display = 'none'; });
+        closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
+        helpBtn.addEventListener('click', () => { alert('راهنما:\\n• وقتی محتوایی نشان داده می‌شود، روی یکی از ایموجی‌ها بزن — هر کلیک یک راند جلو می‌رود.\\n• بازی ۶ راند دارد.\\n• حالت تصادفی: پیشنهادها اتفاقی است.\\n• حالت تکراری: سیستم از لایک‌ها وزن می‌گیرد.'); });
+
+        document.querySelectorAll('.mode-option').forEach(el => el.addEventListener('click', () => { document.querySelectorAll('.mode-option').forEach(x => x.classList.remove('active')); el.classList.add('active'); state.mode = el.dataset.mode; init(); }));
+
+        // start
+        init();
+    </script>
+</body>
+
+</html>
