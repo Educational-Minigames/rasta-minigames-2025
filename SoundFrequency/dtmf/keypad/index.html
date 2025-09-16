@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DTMF Keypad Simulator</title>
+  
+  <!-- p5.js libraries from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #000080;
+      --primary-hover: #0000a0;
+      --background: #ffffff;
+      --surface: #f7f7f7;
+      --border: #dddddd;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #6b7280;
+      --waveform: #000080;
+      --spectrum: #000080;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --shadow-small: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 20px;
+    }
+
+    h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 24px 0;
+      text-align: center;
+      color: var(--primary);
+    }
+
+    .game-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .keypad-wrapper {
+        display: grid;
+        grid-template-areas:
+            ". cols"
+            "rows keys";
+        gap: 10px;
+        align-items: center;
+        justify-items: center;
+    }
+
+    .freq-labels-cols {
+        grid-area: cols;
+        display: flex;
+        gap: 12px; /* Matches keypad gap */
+        width: 200px; /* Matches keypad width */
+    }
+    
+    .freq-labels-rows {
+        grid-area: rows;
+        display: flex;
+        flex-direction: column;
+        gap: 12px; /* Matches keypad gap */
+        height: 236px; /* Matches keypad height (4*50px + 3*12px) */
+        justify-content: space-around;
+    }
+
+    .freq-label {
+        flex: 1;
+        text-align: center;
+        font-size: 14px;
+        color: var(--text-muted);
+        font-family: 'Courier New', monospace;
+    }
+    
+    .keypad-container {
+        grid-area: keys;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        width: 200px;
+    }
+    
+    .keypad-btn {
+        height: 50px;
+        font-size: 20px;
+        font-weight: 500;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background-color: #fff;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow-small);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .keypad-btn:hover {
+        background-color: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+        border-color: var(--primary-hover);
+    }
+
+    .keypad-btn:active {
+        transform: translateY(0);
+        background-color: var(--primary-hover);
+    }
+
+    .frequency-info {
+        /* margin-top: 16px; remove top margin as game-section gap handles it */
+        padding: 12px 20px;
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        color: var(--text-secondary);
+        background-color: #fff;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        min-height: 45px; /* To prevent layout shift */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .frequency-info .freq-value {
+        color: var(--primary);
+        font-weight: 600;
+        margin: 0 5px;
+    }
+
+    .plots-container {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .p5-canvas-container {
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden; /* Ensures canvas corners are rounded */
+    }
+    
+    .plot-label {
+        text-align: center;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+    
+    @media (max-width: 600px) {
+        .plots-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="game-section">
+      <!-- Keypad and frequency labels will be dynamically generated into this wrapper -->
+      <div class="keypad-wrapper">
+        <div class="freq-labels-cols" id="freq-labels-cols"></div>
+        <div class="freq-labels-rows" id="freq-labels-rows"></div>
+        <div class="keypad-container" id="keypad"></div>
+      </div>
+      
+      <div class="frequency-info" id="frequency-display" style="direction: rtl;">
+      </div>
+      
+      <!-- P5.js canvases will be placed here -->
+      
+    </div>
+  </div>
+
+  <script>
+    let osc1, osc2, env, fft;
+    let isPlaying = false;
+    
+    // DTMF frequency mapping: [rowFreq, colFreq]
+    const dtmfFrequencies = {
+      '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+      '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+      '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+      '*': [941, 1209], '0': [941, 1336], '#': [941, 1477]
+    };
+    const keypadLayout = [
+      '1', '2', '3',
+      '4', '5', '6',
+      '7', '8', '9',
+      '*', '0', '#'
+    ];
+
+    // --- P5.JS SETUP ---
+    function setup() {
+      // Create canvases and parent them to the respective divs
+      
+      
+      // Initialize audio components
+      osc1 = new p5.Oscillator('sine');
+      osc2 = new p5.Oscillator('sine');
+      env = new p5.Envelope();
+      env.setADSR(0.01, 0.1, 0.2, 0.2); // Attack, Decay, Sustain, Release
+      env.setRange(0.3, 0); // Attack Level, Release Level
+
+      fft = new p5.FFT(0.8, 1024);
+
+      // --- DYNAMIC FREQUENCY LABEL CREATION ---
+      const colFreqs = [1209, 1336, 1477];
+      const rowFreqs = [697, 770, 852, 941];
+      const colsContainer = document.getElementById('freq-labels-cols');
+      const rowsContainer = document.getElementById('freq-labels-rows');
+
+      colFreqs.forEach(freq => {
+          const label = document.createElement('div');
+          label.className = 'freq-label';
+          label.textContent = `${freq} Hz`;
+          colsContainer.appendChild(label);
+      });
+
+      rowFreqs.forEach(freq => {
+          const label = document.createElement('div');
+          label.className = 'freq-label';
+          label.textContent = `${freq} Hz`;
+          rowsContainer.appendChild(label);
+      });
+      
+      // --- DYNAMIC KEYPAD CREATION ---
+      const keypadDiv = document.getElementById('keypad');
+      keypadLayout.forEach(key => {
+          const button = document.createElement('button');
+          button.className = 'keypad-btn';
+          button.textContent = key;
+          
+          button.addEventListener('mousedown', () => {
+              const freqs = dtmfFrequencies[key];
+              if (freqs) {
+                  playSound(freqs[0], freqs[1]);
+                  const freqDisplay = document.getElementById('frequency-display');
+                  freqDisplay.innerHTML = `سطر:<span class="freq-value">${freqs[0]} Hz</span> | ستون: <span class="freq-value">${freqs[1]} Hz</span>`;
+              }
+          });
+          
+          button.addEventListener('mouseup', stopSound);
+          button.addEventListener('mouseleave', stopSound); // Stop if mouse leaves button while pressed
+          
+          keypadDiv.appendChild(button);
+      });
+    }
+
+    
+
+    // --- AUDIO FUNCTIONS ---
+    function playSound(rowFreq, colFreq) {
+      if (!isPlaying) {
+        osc1.freq(rowFreq);
+        osc1.start();
+        env.play(osc1);
+
+        osc2.freq(colFreq);
+        osc2.start();
+        env.play(osc2);
+        
+        isPlaying = true;
+      }
+    }
+
+    function stopSound() {
+      if (isPlaying) {
+        env.triggerRelease(osc1);
+        env.triggerRelease(osc2);
+        isPlaying = false;
+        const freqDisplay = document.getElementById('frequency-display');
+        freqDisplay.innerHTML = '';
+      }
+    }
+  </script>
+</body>
+</html>
+
+

@@ -1,0 +1,307 @@
+/* css/styles.css - dark theme, responsive improvements */
+
+/* colors and variables */
+:root {
+    --bg: #071129;
+    --card: #0f1724;
+    --muted: #94a3b8;
+    --text: #e6eef8;
+    --accent: #1e3a8a;
+    --accent-2: #0ea5a4;
+    --highlight: #ffd54f;
+    --edge: #183040;
+    --edge-a: #60a5fa;
+    --edge-b: #f59e0b;
+    --panel-width: 260px;
+    --shadow: rgba(2, 6, 23, 0.6);
+}
+
+/* base */
+* {
+    box-sizing: border-box
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+    direction: rtl;
+    background: var(--bg);
+    color: var(--text)
+}
+
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0
+}
+
+.topbar h1 {
+    font-size: 18px;
+    margin: 0;
+    color: var(--text)
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap
+}
+
+.btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    font-family: inherit
+}
+
+.btn.primary {
+    background: var(--accent);
+    color: white;
+    border-color: transparent
+}
+
+.btn.accent {
+    background: var(--accent-2);
+    color: #022;
+    border-color: transparent
+}
+
+.btn:active {
+    transform: translateY(1px)
+}
+
+.main {
+    flex: 1;
+    display: block;
+    position: relative;
+    margin-top: 10px
+}
+
+/* canvas area centered with larger left/right margins on desktop to avoid panel overlap */
+.canvas-wrap {
+    position: fixed;
+    inset: 72px 80px 20px 80px;
+    /* desktop: big margins */
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    border-radius: 12px;
+    box-shadow: 0 12px 36px var(--shadow);
+    padding: 12px;
+    overflow: hidden;
+}
+
+.graph {
+    width: 100%;
+    height: 100%;
+    display: block
+}
+
+/* floating panel (desktop). Hidden on small screens */
+.panel {
+    position: fixed;
+    top: 84px;
+    right: 36px;
+    width: var(--panel-width);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    z-index: 40
+}
+
+.status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px
+}
+
+#status {
+    font-weight: 600
+}
+
+#counter {
+    font-size: 14px;
+    color: var(--muted)
+}
+
+.notes {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.9
+}
+
+/* increased line spacing */
+.panel-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px
+}
+
+.panel-item img {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover
+}
+
+/* modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 60
+}
+
+.modal.show {
+    display: flex
+}
+
+.modal-inner {
+    background: linear-gradient(180deg, var(--card), #071827);
+    border-radius: 12px;
+    padding: 18px;
+    width: min(640px, 92%);
+    box-shadow: 0 18px 46px rgba(2, 6, 23, 0.6);
+    color: var(--text)
+}
+
+.modal-inner h2 {
+    margin-top: 0;
+    color: var(--text)
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px
+}
+
+/* node visuals */
+.node-rect {
+    fill: #071725;
+    stroke: rgba(255, 255, 255, 0.04);
+    stroke-width: 1
+}
+
+.node-selected {
+    stroke: var(--accent);
+    stroke-width: 2;
+    filter: drop-shadow(0 6px 18px rgba(30, 58, 138, 0.12))
+}
+
+.common-highlight {
+    fill: var(--highlight) !important
+}
+
+.node-label {
+    font-size: 12px;
+    fill: var(--text);
+    text-anchor: middle
+}
+
+/* edges */
+.edge {
+    stroke: var(--edge);
+    stroke-width: 2;
+    opacity: 0.95;
+    stroke-linecap: round
+}
+
+.edge-emph-a {
+    stroke: var(--edge-a);
+    stroke-width: 3;
+    opacity: 1
+}
+
+.edge-emph-b {
+    stroke: var(--edge-b);
+    stroke-width: 3;
+    opacity: 1
+}
+
+/* star */
+.star {
+    font-size: 12px;
+    fill: var(--highlight);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6)
+}
+
+/* hover behaviour: avoid translate/scale to prevent jitter on mobile.
+   Just change stroke/shadow for feedback. */
+svg g {
+    cursor: default;
+}
+
+svg g.clickable {
+    cursor: pointer;
+}
+
+svg g.clickable:hover rect {
+    stroke-width: 2.5;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.45));
+}
+
+/* small screens: hide panel, reduce side margins, enlarge nodes and labels for touch */
+@media (max-width:900px) {
+    .panel {
+        display: none
+    }
+
+    .canvas-wrap {
+        inset: 84px 18px 16px 18px
+    }
+
+    .node-label {
+        font-size: 14px
+    }
+
+    .btn {
+        padding: 10px 14px;
+        font-size: 15px
+    }
+}
+
+/* very small screens / phones */
+@media (max-width:700px) {
+    .canvas-wrap {
+        inset: 84px 12px 12px 12px
+    }
+
+    .node-label {
+        font-size: 15px
+    }
+
+    .btn {
+        padding: 12px 14px;
+        font-size: 10px;
+        border-radius: 12px
+    }
+
+
+    .topbar h1 {
+        font-size: 16px
+    }
+
+
+}

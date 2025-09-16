@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>مینی گیم اسپوفینگ - نتخاب موج</title>
+  <style>
+    @font-face {
+      font-family: 'B Zar';
+      src: url('fonts/BZar.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }
+    body {
+      background: #111;
+      color: #fff;
+      font-family: 'B Zar';
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: #222;
+      border: 2px solid #00ff00;
+      border-radius: 10px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #00ff00;
+      color: #111;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #44ff44;
+    }
+    #feedback {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1> شبیه‌ساز اسپوفینگ  </h1>
+  <p>از بین این ۴ موج، یک موج درسته. حدس بزن کدوم موج صحیحه؟!</p>
+  <canvas id="signalCanvas" width="600" height="400"></canvas>
+  <br>
+  <div id="buttons"></div>
+  <div id="feedback"></div>
+
+  <script>
+    const canvas = document.getElementById("signalCanvas");
+    const ctx = canvas.getContext("2d");
+    const feedback = document.getElementById("feedback");
+    const buttons = document.getElementById("buttons");
+
+    let t = 0;
+
+    const realSignalIndex = Math.floor(Math.random() * 4);
+
+    let signals = [];
+    for (let i = 0; i < 4; i++) {
+      signals.push({phase: Math.random() * 2, color: "#ff3333"});
+    }
+
+    for (let i = 0; i < 4; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = `موج ${i + 1}`;
+      btn.onclick = () => checkAnswer(i);
+      buttons.appendChild(btn);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      signals.forEach((sig, index) => {
+        ctx.beginPath();
+        ctx.moveTo(0, (index + 1) * 80);
+        for (let x = 0; x < canvas.width; x++) {
+          let y = Math.sin((x + t) * 0.05 + sig.phase) * 30;
+          ctx.lineTo(x, (index + 1) * 80 + y);
+        }
+        ctx.strokeStyle = sig.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      t += 2;
+      requestAnimationFrame(draw);
+    }
+
+    function checkAnswer(choice) {
+      if (choice === realSignalIndex) {
+        feedback.textContent = `✅ درست حدس زدی! موج ${choice + 1} واقعی بود.`;
+        feedback.style.color = "#00ff00";
+      } else {
+        feedback.textContent = `❌ اشتباه! موج ${choice + 1} تقلبی بود.`;
+        feedback.style.color = "#ff3333";
+      }
+      signals[realSignalIndex].color = "#00ff00";
+    }
+
+    draw();
+  </script>
+</body>
+</html>

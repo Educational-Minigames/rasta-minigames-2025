@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fa">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>مینی‌گیم: Embeddedness</title>
+
+    <!-- Vazirmatn via Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <main class="app">
+        <header class="topbar">
+            <h1>مینی‌گیم: شباهت (Embeddedness)</h1>
+
+            <div class="controls">
+                <div class="stages">
+                    <button id="stage1" class="btn primary">مرحله ۱ (کاربران)</button>
+                    <button id="stage2" class="btn">مرحله ۲ (محتوا)</button>
+                    <button id="stage3" class="btn">مرحله ۳ (مقایسه ۲ جفت)</button>
+                </div>
+
+                <div class="actions">
+                    <button id="compareBtn" class="btn accent">مقایسه</button>
+                    <button id="resetBtn" class="btn">بازنشانی</button>
+                    <button id="helpBtn" class="btn">راهنما</button>
+                </div>
+            </div>
+        </header>
+
+        <section class="main">
+            <div class="canvas-wrap">
+                <svg id="svg" class="graph" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet"
+                    aria-label="گراف کاربران و محتوا"></svg>
+            </div>
+
+            <!-- floating info panel (desktop). On small screens it's hidden via CSS -->
+            <aside class="panel" id="infoPanel" aria-hidden="false">
+                <div class="status">
+                    <div id="status">بارگذاری...</div>
+                    <div id="counter">تعداد مشترک: -</div>
+                </div>
+                <div class="notes" id="panelDetails">
+                    <p>حالت: انتخاب نودها و سپس زدن «مقایسه».</p>
+                </div>
+            </aside>
+        </section>
+
+        <!-- Help modal -->
+        <div id="helpModal" class="modal" aria-hidden="true">
+            <div class="modal-inner" role="dialog" aria-modal="true" aria-label="راهنما">
+                <h2>راهنما</h2>
+                <ol>
+                    <li>مرحلهٔ ۱: دو کاربر انتخاب کن — محتوای مشترکشان نمایش داده می‌شود.</li>
+                    <li>مرحلهٔ ۲: دو محتوا انتخاب کن — کاربران مشترک نمایش داده می‌شوند.</li>
+                    <li>مرحلهٔ ۳: دو جفت انتخاب کن (ابتدا یک جفت، سپس دوم) و سپس دکمهٔ «مقایسه» را بزن.</li>
+                    <li>برای پاک کردن انتخاب‌ها، روی فضای خالی کلیک کن یا از دکمهٔ «بازنشانی» استفاده کن.</li>
+                </ol>
+                <div class="modal-actions">
+                    <button id="closeHelp" class="btn primary">باشه</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compare modal -->
+        <div id="compareModal" class="modal" aria-hidden="true">
+            <div class="modal-inner" role="dialog" aria-modal="true" aria-label="نتیجهٔ مقایسه">
+                <h2 id="compareTitle">نتیجهٔ مقایسه</h2>
+                <div id="compareBody"></div>
+                <div class="modal-actions">
+                    <button id="closeCompare" class="btn primary">باشه</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script defer src="js/app.js"></script>
+</body>
+
+</html>

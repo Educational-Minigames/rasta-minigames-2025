@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Overlap Minigame</title>
+
+    <!-- External styles (keep if you want project-wide styling) -->
+    <link href="../css/base.css" rel="stylesheet" type="text/css"/>
+    <link href="../css/gps.css" rel="stylesheet" type="text/css" />
+
+    <!-- Core scripts -->
+    <script defer src="../js/base.js"></script>
+    <script defer src="../js/gps.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+      }
+      .drawer_container {
+        border: 1px solid #000000;
+        background: #000000;
+        margin: 20px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ratio_70 {
+        width: 70%;
+        aspect-ratio: 16/9;
+      }
+      .slider_time,
+      .slider_bias {
+        width: 70%;
+        height: 40px;
+        margin: 10px auto;
+        background: #000000;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main_container">
+      <div class="article">
+        <div class="dark_light_bg">
+          <div class="bg_content">
+            
+            <!-- Overlap minigame -->
+            <div class="drawer_container full_width ratio_70" id="overlap">
+            </div>
+            <div class="slider_time" id="overlap_sl0">
+            </div>
+            <div class="slider_bias" id="overlap_sl1">
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>مینی گیم مقابله با Spoofing</title>
+  <style>
+    @font-face {
+      font-family: 'B Zar';
+      src: url('fonts/BZar.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }
+    body {
+      background: #111;
+      color: #fff;
+      font-family: 'B Zar';
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: #222;
+      border: 2px solid #00ff00;
+      border-radius: 10px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #00ff00;
+      color: #111;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #44ff44;
+    }
+    #feedback {
+      font-size: 18px;
+      margin-top: 10px;
+      min-height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🛰️ مقابله با Spoofing 🛰️</h1>
+  <p>یکی از روش‌های دفاعی رو انتخاب کن و ببین چه اتفاقی می‌افته!</p>
+  <canvas id="signalCanvas" width="600" height="400"></canvas>
+  <br>
+  <button onclick="applyDefense('multi')">🔀 چند منبع سیگنال</button>
+  <button onclick="applyDefense('crypto')">🔑 رمزنگاری سیگنال</button>
+  <button onclick="applyDefense('antenna')">📡 آنتن هوشمند</button>
+  <div id="feedback"></div>
+
+  <script>
+    const canvas = document.getElementById("signalCanvas");
+    const ctx = canvas.getContext("2d");
+    const feedback = document.getElementById("feedback");
+
+    let t = 0;
+    let signals = [];
+    let defenseMode = null;
+
+    const realIndex = Math.floor(Math.random() * 5);
+    for (let i = 0; i < 5; i++) {
+      signals.push({
+        phase: Math.random() * 2,
+        color: i === realIndex ? "#00ff00" : "#ff3333",
+        real: i === realIndex,
+        y: (i + 1) * 60
+      });
+    }
+
+    function drawSignals() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // رسم سیگنال‌ها
+      signals.forEach(sig => {
+        ctx.beginPath();
+        ctx.strokeStyle = sig.color;
+        for (let x = 0; x < canvas.width; x++) {
+          let y = sig.y + Math.sin((x / 40) + t + sig.phase) * 20;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      });
+
+      // بسته به حالت دفاع
+      if (defenseMode === "multi") {
+        // سه گیرنده
+        const receivers = [150, 300, 450];
+        receivers.forEach(x => {
+          ctx.beginPath();
+          ctx.arc(x, 360, 20, 0, 2 * Math.PI);
+          ctx.fillStyle = "#00ff00";
+          ctx.fill();
+        });
+
+        // اتصال سیگنال واقعی به همه‌ی گیرنده‌ها
+        let realSignal = signals.find(s => s.real);
+        receivers.forEach(x => {
+          ctx.beginPath();
+          ctx.moveTo(canvas.width / 2, realSignal.y);
+          ctx.lineTo(x, 360);
+          ctx.strokeStyle = "#00ff00";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+
+        // اتصال جعلی‌ها فقط به یکی از گیرنده‌ها
+        signals.forEach((sig, idx) => {
+          if (!sig.real) {
+            let target = receivers[idx % receivers.length];
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, sig.y);
+            ctx.lineTo(target, 360);
+            ctx.strokeStyle = "#ff3333";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // ضربدر روی گیرنده فریب‌خورده
+            ctx.strokeStyle = "#ff3333";
+            ctx.beginPath();
+            ctx.moveTo(target - 10, 350);
+            ctx.lineTo(target + 10, 370);
+            ctx.moveTo(target + 10, 350);
+            ctx.lineTo(target - 10, 370);
+            ctx.stroke();
+          }
+        });
+      } 
+      else if (defenseMode === "crypto") {
+        signals.forEach(sig => {
+          ctx.fillStyle = sig.real ? "#00ff00" : "#ff3333";
+          ctx.font = "24px Arial";
+          ctx.fillText(sig.real ? "🔓" : "🔒", 560, sig.y);
+        });
+      } 
+      else if (defenseMode === "antenna") {
+        signals.forEach(sig => {
+          ctx.fillStyle = sig.real ? "#00ff00" : "#ff3333";
+          ctx.font = "22px Arial";
+          ctx.fillText(sig.real ? "✅" : "⚡", 20, sig.y);
+        });
+      }
+
+      t += 0.05;
+    }
+
+    function applyDefense(type) {
+      defenseMode = type;
+      if (type === "multi") {
+        feedback.innerText = "چند گیرنده با هم مقایسه می‌کنن، جعلی‌ها فقط یکی رو گمراه می‌کنن و لو می‌رن!";
+      } else if (type === "crypto") {
+        feedback.innerText = "فقط سیگنال واقعی رمز درست داره!";
+      } else if (type === "antenna") {
+        feedback.innerText = "آنتن هوشمند جهت درست رو تشخیص می‌ده!";
+      }
+    }
+
+    function animate() {
+      drawSignals();
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>

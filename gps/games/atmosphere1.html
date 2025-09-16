@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fa">
+<head>
+<meta charset="utf-8">
+<title>تاثیر زاویه انتشار</title>
+<style>
+  body{
+    background:#0b1020;
+    color:white;
+    font-family:sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin:0;
+    padding:20px;
+  }
+  canvas{
+    background:#111;
+    border-radius:12px;
+  }
+  .controls{margin-top:10px}
+</style>
+</head>
+<body>
+<h2 style="font-family: B Zar;"> تاثیر زاویه انتشار سیگنال برمقداری از سیگنال که در تروپوسفر سفر می کند.</h2>
+<canvas id="canvas" width="600" height="400"></canvas>
+<div class="controls">
+  زاویه: <input type="range" id="angle" min="-80" max="80" value="0">
+  <span id="val">0°</span>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+// مرکز دایره ثابت
+const center = {x: canvas.width/2, y: canvas.height +600};
+const R = 700;
+
+// نقطه‌ای که پرتو حول آن می‌چرخد (pivot)
+const pivot = {x: canvas.width/2, y: canvas.height };
+
+function draw(angle){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // رسم دایره
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, R, 0, Math.PI*2);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = "rgba(255,200,50,0.5)";
+  ctx.stroke();
+
+  // بردار جهت پرتو از pivot
+  const rad = angle * Math.PI/180;
+  const dx = Math.sin(rad);
+  const dy = -Math.cos(rad);
+
+  const len = 400;
+  const end = {x: pivot.x + dx*len, y: pivot.y + dy*len};
+
+  // محاسبه تقاطع پرتو با دایره
+  const ox = pivot.x - center.x;
+  const oy = pivot.y - center.y;
+  const a = dx*dx + dy*dy;
+  const b = 2*(ox*dx + oy*dy);
+  const c = ox*ox + oy*oy - R*R;
+  const D = b*b - 4*a*c;
+
+  let entry=null, exit=null;
+  if(D>=0){
+    const sd = Math.sqrt(D);
+    const t1 = (-b - sd)/(2*a);
+    const t2 = (-b + sd)/(2*a);
+    [t1,t2].forEach(t=>{
+      if(t>=0){
+        const pt = {x: pivot.x + dx*t, y: pivot.y + dy*t};
+        if(!entry) entry = pt;
+        else exit = pt;
+      }
+    });
+  }
+
+  // رسم پرتو
+  if( exit){
+    // قبل از ورود
+    ctx.beginPath();
+    ctx.moveTo(pivot.x, pivot.y);
+    ctx.lineTo(entry.x, entry.y);
+    ctx.strokeStyle="rgba(200,200,200,0.3)";
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    // داخل دایره (قرمز)
+    ctx.beginPath();
+    ctx.moveTo(entry.x, entry.y);
+    ctx.lineTo(exit.x, exit.y);
+    ctx.strokeStyle="red";
+    ctx.lineWidth=4;
+    ctx.stroke();
+
+    // بعد از خروج
+    ctx.beginPath();
+    ctx.moveTo(exit.x, exit.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle="rgba(100,0,200,0.3)";
+    ctx.lineWidth=2;
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(pivot.x, pivot.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle="red";
+    ctx.lineWidth=2;
+    ctx.stroke();
+  }
+
+  // رسم pivot
+  ctx.beginPath();
+  ctx.arc(pivot.x, pivot.y, 6, 0, Math.PI*2);
+  ctx.fillStyle = "cyan";
+  ctx.fill();
+
+  // رسم مرکز دایره
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, 6, 0, Math.PI*2);
+  ctx.fillStyle = "yellow";
+  ctx.fill();
+}
+
+document.getElementById("angle").addEventListener("input", e=>{
+  const val = parseFloat(e.target.value);
+  document.getElementById("val").textContent = val + "°";
+  draw(val);
+});
+
+draw(0);
+</script>
+</body>
+</html>
+

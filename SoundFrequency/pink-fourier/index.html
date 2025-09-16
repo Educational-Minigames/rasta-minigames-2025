@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fourier Games</title>
+  <link href="css/styles.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<main id="content">
+  <canvas id="self-draw" class="sketch" width=500 height=500></canvas>
+  <canvas id="combo-sine-wave" class="sketch" width=500 height=300></canvas>
+  <canvas id="combo-sine-wave-split" class="sketch" width=500 height=500></canvas>
+  <p><button id="together-button" class="button">Play Full Wave</button></p>
+  <p><button id="split-button-1" class="button">Play High Frequency</button></p>
+  <p><button id="split-button-2" class="button">Play Low Frequency</button></p>
+  <canvas id="square-wave" class="sketch" width=500 height=300></canvas>
+  <canvas id="square-wave-split" class="sketch" width=500 height=500></canvas>
+  <canvas id="square-wave-build-up" class="sketch" width=500 height=500></canvas>
+  <p><input id="square-wave-build-up-slider" type="range" min="0" max="1" value="0" step="any"></p>
+  <p><button id="square-wave-button" class="button">Play Wave</button></p>
+
+  <div class="multi-container">
+    <div class="sketch">
+      <canvas id="wave-draw" class="sketch-child" width=500 height=300></canvas>
+      <p id="wave-draw-instruction" class="instruction wave-instruction">Draw here!</p>
+    </div>
+    <canvas id="wave-draw-split" class="sketch" width=500 height=500></canvas>
+  </div>
+  <p><input id="wave-draw-slider" type="range" min="0" max="1" value="1" step="any">
+     <button id="wave-draw-button" class="button">Play Wave</button></p>
+
+  <canvas id="wave-samples" class="sketch" width=500 height=500></canvas>
+  <canvas id="wave-frequencies" class="sketch" width=500 height=500></canvas>
+  <canvas id="complex-sinusoid" class="sketch" width=500 height=500></canvas>
+  <canvas id="complex-sinusoid-turn" class="sketch" width=500 height=500></canvas>
+  <canvas id="peace-epicycles" class="sketch" width=500 height=500></canvas>
+  <canvas id="peace-3d" class="sketch" width=500 height=500></canvas>
+  <canvas id="peace-build-up" class="sketch" width=500 height=500></canvas>
+  <p><input id="peace-build-up-slider" type="range" min="0" max="1" value="1" step="any"></p>
+
+  <div class="multi-container">
+    <div class="sketch">
+      <canvas id="draw-zone" class="sketch-child" width=500 height=500></canvas>
+      <p id="draw-zone-instruction" class="instruction">Draw here!</p>
+      <button id="draw-zone-undo-button" class="button embedded-button">Undo</button>
+    </div>
+    <canvas id="circle-zone" class="sketch" width=500 height=500></canvas>
+  </div>
+  <p><input id="circle-zone-slider" type="range" min="0" max="1" value="1" step="any"></p>
+  <canvas id="fourier-title" class="sketch" width=500 height=300></canvas>
+</main>
+
+<script src="main.bundle.js"></script>
+</body>
+</html>

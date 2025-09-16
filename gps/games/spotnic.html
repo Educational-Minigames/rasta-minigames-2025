@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>مینی گیم ماهواره و زمین</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: black;
+      overflow: hidden;
+      flex-direction: column;
+    }
+
+    canvas {
+      background: radial-gradient(circle at center, #001d3d, #000);
+    }
+
+    button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #ff4444;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button.muted {
+      background: gray;
+    }
+  </style>
+</head>
+<body>
+<button id="muteBtn">🔊 صدا روشن</button>
+<canvas id="game"></canvas>
+<script>
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const muteBtn = document.getElementById("muteBtn");
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+
+  const earthRadius = 100;
+  const orbitRadius = 200;
+
+  let humanAngle = Math.PI / 2;
+  let satelliteAngle = 0;
+  let waves = [];
+
+  const earthImg = new Image();
+  earthImg.src = "https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg";
+
+  const satImg = new Image();
+  satImg.src = "https://cdn-icons-png.flaticon.com/512/1062/1062195.png";
+
+  let lastTime = performance.now();
+  const orbitPeriod = 40000; 
+  const angularSpeed = (2 * Math.PI) / orbitPeriod;
+
+  // تابع ریست بازی
+  function resetGame() {
+    satelliteAngle = 0;
+    waves = [];
+    lastTime = performance.now();
+  }
+
+  function addWave(strength, wavelength) {
+    const satX = centerX + orbitRadius * Math.cos(satelliteAngle);
+    const satY = centerY + orbitRadius * Math.sin(satelliteAngle);
+    const angleToCenter = Math.atan2(centerY - satY, centerX - satX);
+
+    waves.push({
+      x: satX,
+      y: satY,
+      r: 10,
+      alpha: 1,
+      angle: angleToCenter,
+      strength,
+      wavelength
+    });
+  }
+
+  function draw(now) {
+    const deltaTime = now - lastTime;
+    lastTime = now;
+
+    satelliteAngle += angularSpeed * deltaTime;
+
+    // بررسی دور کامل
+    if (satelliteAngle >= 2 * Math.PI) {
+      resetGame();
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // زمین
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, earthRadius, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.clip();
+    if (earthImg.complete && earthImg.naturalWidth > 0) {
+      ctx.drawImage(earthImg, centerX - earthRadius, centerY - earthRadius, earthRadius * 2, earthRadius * 2);
+    } else {
+      ctx.fillStyle = "blue";
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // آدمک
+    const humanX = centerX + earthRadius * Math.cos(humanAngle);
+    const humanY = centerY + earthRadius * Math.sin(humanAngle);
+    ctx.beginPath();
+    ctx.arc(humanX, humanY, 6, 0, 2 * Math.PI);
+    ctx.fillStyle = "red";
+    ctx.fill();
+
+    // مدار
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, orbitRadius, 0, 2 * Math.PI);
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    ctx.stroke();
+
+    // ماهواره
+    const satX = centerX + orbitRadius * Math.cos(satelliteAngle);
+    const satY = centerY + orbitRadius * Math.sin(satelliteAngle);
+
+    if (satImg.complete && satImg.naturalWidth > 0) {
+      ctx.drawImage(satImg, satX - 20, satY - 20, 40, 40);
+    } else {
+      ctx.fillStyle = "gray";
+      ctx.fillRect(satX - 15, satY - 15, 30, 30);
+    }
+
+    // موج‌ها
+    for (let i = 0; i < waves.length; i++) {
+      let w = waves[i];
+      ctx.beginPath();
+      ctx.arc(w.x, w.y, w.r, w.angle - Math.PI/2, w.angle + Math.PI/2);
+      ctx.strokeStyle = `rgba(0,200,255,${w.alpha})`;
+      ctx.lineWidth = w.strength;
+      ctx.stroke();
+
+      w.r += w.wavelength;
+      w.alpha -= 0.02;
+    }
+    waves = waves.filter(w => w.alpha > 0);
+
+    requestAnimationFrame(draw);
+  }
+
+  // کنترل نرخ تولید موج
+  setInterval(() => {
+    let angleDiff = Math.abs(satelliteAngle - humanAngle);
+    if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+
+    const proximity = 1 - (angleDiff / Math.PI);
+
+    const freq = 1 + Math.round(3 * proximity);
+    const strength = 1 + 4 * proximity;
+    const wavelength = 1 + 2 * proximity;
+
+    for (let i = 0; i < freq; i++) addWave(strength, wavelength);
+
+    setBeepRate(proximity);
+  }, 300);
+
+  // کنترل آدمک با موس
+  canvas.addEventListener("mousemove", e => {
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    humanAngle = Math.atan2(dy, dx);
+  });
+
+  // صدا
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let lastBeepTime = 0;
+  let beepInterval = 1000;
+  let isMuted = false;
+
+  function setBeepRate(proximity) {
+    beepInterval = 1000 - 900 * proximity;
+    beepInterval = Math.max(150, beepInterval);
+  }
+
+  function playBeep() {
+    if (isMuted) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = 440;
+    gainNode.gain.setValueAtTime(0.2, now);
+
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
+  function beepLoop() {
+    const now = performance.now();
+    if (now - lastBeepTime >= beepInterval) {
+      playBeep();
+      lastBeepTime = now;
+    }
+    requestAnimationFrame(beepLoop);
+  }
+  beepLoop();
+
+  // دکمه میوت
+  muteBtn.addEventListener("click", () => {
+    isMuted = !isMuted;
+    muteBtn.textContent = isMuted ? "🔇 صدا خاموش" : "🔊 صدا روشن";
+    muteBtn.classList.toggle("muted", isMuted);
+  });
+
+  // شروع رسم
+  draw(performance.now());
+</script>
+</body>
+</html>

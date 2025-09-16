@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Frequency Domain Noise Reducer</title>
+  <style>
+    :root {
+      --primary: #000080;
+      --primary-hover: #0000a0;
+      --secondary: #d9534f; /* A contrasting color for the filter */
+      --background: #ffffff;
+      --surface: #f7f7f7;
+      --surface-hover: #eeeeee;
+      --border: #dddddd;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #6b7280;
+      --waveform: #000080;
+      --spectrum: #000080;
+      --selection: rgba(217, 83, 79, 0.2);
+      --handle: #d9534f;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --shadow-small: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 32px 0;
+      text-align: center;
+      color: var(--primary);
+    }
+
+    .visualization-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 4px;
+      height: 18px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 150px;
+      background: var(--background);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .plot-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .plot-container {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .plot-label {
+        text-align: center;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    #filterCanvas {
+      cursor: pointer;
+      position: relative;
+      height: 200px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--surface-hover);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    
+    .freq-display {
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .freq-label { color: var(--text-secondary); }
+    .freq-value { color: var(--handle); font-weight: 600; }
+
+    .instruction { color: var(--text-muted); font-size: 14px; max-width: 400px; text-align: center; }
+
+    .action-section { text-align: center; margin: 32px 0; }
+
+    button {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-small);
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0, 0, 128, 0.2);
+    }
+
+    button:disabled {
+      background: var(--surface-hover);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .loading-indicator {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--text-muted);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .play-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    
+    .play-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-small);
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+    
+    .play-btn:hover { transform: scale(1.05); }
+    .play-btn:disabled { background: var(--surface-hover); color: var(--text-muted); cursor: not-allowed; }
+
+    @media (max-width: 768px) {
+        .plot-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>Frequency Noise Reducer</h3>
+
+    <!-- Original Signal -->
+    <div class="visualization-section">
+      <div class="section-title">🔊 Original Noisy Signal</div>
+      <div class="plot-grid">
+        <div class="plot-container"><div class="plot-label">Time Domain</div><canvas id="originalWaveform"></canvas></div>
+        <div class="plot-container"><div class="plot-label">Frequency Domain</div><canvas id="originalSpectrum"></canvas></div>
+      </div>
+      <div class="play-controls">
+        <button class="play-btn" id="playOriginalBtn" disabled>▶️</button>
+        <span>Listen to Original</span>
+      </div>
+    </div>
+
+    <!-- Filter Selection -->
+    <div class="visualization-section">
+      <div class="section-title">✂️ Frequency Filter Selection</div>
+      <canvas id="filterCanvas"></canvas>
+      <div class="controls">
+        <div class="freq-display">
+          <span class="freq-label">Start: </span><span class="freq-value"><span id="fStart">0.00</span> Hz</span>
+        </div>
+        <div class="freq-display">
+          <span class="freq-label">End: </span><span class="freq-value"><span id="fEnd">0.00</span> Hz</span>
+        </div>
+        <div class="instruction">💡 Drag the red handles to select a frequency range to remove.</div>
+      </div>
+    </div>
+
+    <!-- Action Button -->
+    <div class="action-section">
+      <button id="applyFilterBtn" disabled>
+        <span id="btnText">🔄 Apply Filter & Invert FFT</span>
+      </button>
+    </div>
+
+    <!-- Filtered Signal -->
+    <div class="visualization-section" id="filteredSection" style="display:none;">
+      <div class="section-title">✨ Filtered (Denoised) Signal</div>
+       <div class="plot-grid">
+        <div class="plot-container"><div class="plot-label">Time Domain</div><canvas id="filteredWaveform"></canvas></div>
+        <div class="plot-container"><div class="plot-label">Frequency Domain</div><canvas id="filteredSpectrum"></canvas></div>
+      </div>
+      <div class="play-controls">
+        <button class="play-btn" id="playFilteredBtn" disabled>▶️</button>
+        <span>Listen to Filtered</span>
+      </div>
+    </div>
+  </div>
+
+<script>
+// --- CONFIGURATION ---
+const SOUND_URL = 'sound.mp3';
+const MAX_FREQUENCY = 4000;
+
+// --- DOM ELEMENTS ---
+const elements = {
+    originalWaveform: document.getElementById('originalWaveform'),
+    originalSpectrum: document.getElementById('originalSpectrum'),
+    playOriginalBtn: document.getElementById('playOriginalBtn'),
+    filterCanvas: document.getElementById('filterCanvas'),
+    fStart: document.getElementById('fStart'),
+    fEnd: document.getElementById('fEnd'),
+    applyFilterBtn: document.getElementById('applyFilterBtn'),
+    btnText: document.getElementById('btnText'),
+    filteredSection: document.getElementById('filteredSection'),
+    filteredWaveform: document.getElementById('filteredWaveform'),
+    filteredSpectrum: document.getElementById('filteredSpectrum'),
+    playFilteredBtn: document.getElementById('playFilteredBtn'),
+};
+
+// --- GLOBAL STATE ---
+let audioCtx;
+let originalBuffer = null;
+let filteredBuffer = null;
+let monoSignal = null;
+let sampleRate = 44100;
+let currentSpectrum = null;
+let filterRange = { start: 1000, end: 1500 }; // Hz
+let activePlayer = null;
+
+// --- UTILITY FUNCTIONS ---
+function fitCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return ctx;
+}
+
+function nextPow2(v) { let p = 1; while(p < v) p <<= 1; return p; }
+
+// --- DRAWING FUNCTIONS ---
+function drawWaveform(canvas, data, color = 'var(--waveform)') {
+    const ctx = fitCanvas(canvas);
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = getComputedStyle(canvas).getPropertyValue('--waveform').trim();
+    ctx.beginPath();
+    const step = data.length / w;
+    let maxAmp = 0;
+    for (let i = 0; i < data.length; i++) maxAmp = Math.max(maxAmp, Math.abs(data[i]));
+    for (let i = 0; i < w; i++) {
+        const index = Math.floor(i * step);
+        const val = data[index] / maxAmp;
+        const y = (1 - val) * h / 2;
+        if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
+    }
+    ctx.stroke();
+}
+
+function drawSpectrum(canvas, spectrumData, color = 'var(--spectrum)') {
+    const { freqs, mags } = spectrumData;
+    const ctx = fitCanvas(canvas);
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    const maxDisplayFreq = Math.min(MAX_FREQUENCY, freqs[freqs.length-1]);
+    
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = getComputedStyle(canvas).getPropertyValue('--spectrum').trim();
+    ctx.beginPath();
+    for (let i = 0; i < freqs.length; i++) {
+        const f = freqs[i];
+        if (f > maxDisplayFreq) break;
+        const x = (f / maxDisplayFreq) * w;
+        const y = (1 - mags[i]) * h;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+function drawFilterSpectrum() {
+    if (!currentSpectrum) return;
+    const { freqs, mags } = currentSpectrum;
+    const ctx = fitCanvas(elements.filterCanvas);
+    const w = elements.filterCanvas.clientWidth, h = elements.filterCanvas.clientHeight;
+    
+    drawSpectrum(elements.filterCanvas, currentSpectrum);
+
+    const maxDisplayFreq = Math.min(MAX_FREQUENCY, freqs[freqs.length-1]);
+    const startX = (filterRange.start / maxDisplayFreq) * w;
+    const endX = (filterRange.end / maxDisplayFreq) * w;
+
+    // Selection overlay
+    ctx.fillStyle = getComputedStyle(elements.filterCanvas).getPropertyValue('--selection').trim();
+    ctx.fillRect(startX, 0, endX - startX, h);
+
+    // Handles
+    ctx.fillStyle = getComputedStyle(elements.filterCanvas).getPropertyValue('--handle').trim();
+    ctx.fillRect(startX - 2, 0, 4, h);
+    ctx.fillRect(endX - 2, 0, 4, h);
+
+    elements.fStart.textContent = filterRange.start.toFixed(2);
+    elements.fEnd.textContent = filterRange.end.toFixed(2);
+}
+
+
+// --- FFT / IFFT ---
+function complexFFT(real, imag, sign) {
+    const n = real.length; if (n <= 1) return;
+    const levels = Math.log2(n);
+    // Bit-reversal
+    for (let i = 0; i < n; i++) {
+        let j = 0, bit = i;
+        for (let k = 0; k < levels; k++) { j = (j << 1) | (bit & 1); bit >>= 1; }
+        if (j > i) { [real[i], real[j]] = [real[j], real[i]]; [imag[i], imag[j]] = [imag[j], imag[i]]; }
+    }
+    // Cooley-Tukey
+    for (let size = 2; size <= n; size <<= 1) {
+        const half = size / 2;
+        const theta = sign * 2 * Math.PI / size;
+        const wpr = Math.cos(theta), wpi = Math.sin(theta);
+        for (let i = 0; i < n; i += size) {
+            let wr = 1, wi = 0;
+            for (let j = 0; j < half; j++) {
+                const k = i + j, l = k + half;
+                const tr = wr * real[l] - wi * imag[l];
+                const ti = wr * imag[l] + wi * real[l];
+                real[l] = real[k] - tr; imag[l] = imag[k] - ti;
+                real[k] += tr; imag[k] += ti;
+                const tmp = wr; wr = tmp * wpr - wi * wpi; wi = tmp * wpi + wi * wpr;
+            }
+        }
+    }
+}
+
+function computeSpectrumData(samples) {
+    const N = nextPow2(samples.length);
+    const real = new Float32Array(N);
+    real.set(samples);
+    const imag = new Float32Array(N);
+    
+    complexFFT(real, imag, -1);
+    
+    const half = N / 2;
+    const mags = new Float32Array(half);
+    let maxMag = 0;
+    for (let k = 0; k < half; k++) {
+        mags[k] = Math.sqrt(real[k]**2 + imag[k]**2);
+        if (mags[k] > maxMag) maxMag = mags[k];
+    }
+    if (maxMag > 0) for (let k = 0; k < half; k++) mags[k] /= maxMag;
+    
+    const freqs = new Float32Array(half);
+    for (let k = 0; k < half; k++) freqs[k] = k * sampleRate / N;
+    
+    return { freqs, mags, real, imag, N };
+}
+
+function applyIFFT(real, imag, N) {
+    complexFFT(real, imag, 1);
+    const signal = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+        signal[i] = real[i] / N;
+    }
+    return signal;
+}
+
+
+// --- AUDIO PROCESSING & PLAYBACK ---
+async function loadAudio() {
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const response = await fetch(SOUND_URL);
+        if (!response.ok) throw new Error(`Failed to fetch ${SOUND_URL}`);
+        const arrayBuffer = await response.arrayBuffer();
+        originalBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        sampleRate = originalBuffer.sampleRate;
+
+        // Mix to mono
+        const L = originalBuffer.length;
+        monoSignal = new Float32Array(L);
+        for (let i = 0; i < L; i++) {
+            let s = 0;
+            for (let c = 0; c < originalBuffer.numberOfChannels; c++) {
+                s += originalBuffer.getChannelData(c)[i];
+            }
+            monoSignal[i] = s / originalBuffer.numberOfChannels;
+        }
+
+        currentSpectrum = computeSpectrumData(monoSignal);
+        drawWaveform(elements.originalWaveform, monoSignal);
+        drawSpectrum(elements.originalSpectrum, currentSpectrum);
+        drawFilterSpectrum();
+        
+        elements.playOriginalBtn.disabled = false;
+        elements.applyFilterBtn.disabled = false;
+        elements.btnText.innerHTML = '🔄 Apply Filter & Invert FFT';
+
+    } catch (err) {
+        alert('Error loading audio: ' + err.message);
+        console.error(err);
+        elements.btnText.textContent = '❌ Audio Load Failed';
+    }
+}
+
+function playBuffer(buffer, btn) {
+    if (activePlayer) activePlayer.stop();
+    if (!buffer) return;
+
+    activePlayer = audioCtx.createBufferSource();
+    activePlayer.buffer = buffer;
+    activePlayer.connect(audioCtx.destination);
+    activePlayer.start(0);
+
+    const allBtns = document.querySelectorAll('.play-btn');
+    allBtns.forEach(b => b.textContent = '▶️');
+    btn.textContent = '⏹️';
+
+    activePlayer.onended = () => {
+        btn.textContent = '▶️';
+        activePlayer = null;
+    };
+}
+
+// --- EVENT LISTENERS ---
+elements.playOriginalBtn.addEventListener('click', () => playBuffer(originalBuffer, elements.playOriginalBtn));
+elements.playFilteredBtn.addEventListener('click', () => playBuffer(filteredBuffer, elements.playFilteredBtn));
+
+elements.applyFilterBtn.addEventListener('click', () => {
+    elements.applyFilterBtn.disabled = true;
+    elements.btnText.innerHTML = '<span class="loading-indicator"></span>Processing...';
+    
+    setTimeout(() => { // Allow UI to update
+        const { real, imag, N, freqs } = computeSpectrumData(monoSignal);
+        
+        // Apply band-stop filter
+        for (let k = 0; k < freqs.length; k++) {
+            if (freqs[k] >= filterRange.start && freqs[k] <= filterRange.end) {
+                real[k] = 0; imag[k] = 0;
+                if (k > 0) { // Mirror for negative frequencies
+                    real[N - k] = 0; imag[N - k] = 0;
+                }
+            }
+        }
+        
+        const filteredSignal = applyIFFT(real, imag, N);
+        
+        // Create new audio buffer for playback
+        filteredBuffer = audioCtx.createBuffer(1, filteredSignal.length, sampleRate);
+        filteredBuffer.copyToChannel(filteredSignal, 0);
+
+        const filteredSpectrumData = computeSpectrumData(filteredSignal);
+
+        drawWaveform(elements.filteredWaveform, filteredSignal);
+        drawSpectrum(elements.filteredSpectrum, filteredSpectrumData);
+        
+        elements.filteredSection.style.display = 'block';
+        elements.playFilteredBtn.disabled = false;
+        elements.applyFilterBtn.disabled = false;
+        elements.btnText.innerHTML = '🔄 Apply Filter & Invert FFT';
+    }, 50);
+});
+
+let draggingHandle = null;
+elements.filterCanvas.addEventListener('pointerdown', (e) => {
+    const rect = elements.filterCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const maxFreq = Math.min(MAX_FREQUENCY, currentSpectrum.freqs[currentSpectrum.freqs.length - 1]);
+    const startX = (filterRange.start / maxFreq) * rect.width;
+    const endX = (filterRange.end / maxFreq) * rect.width;
+
+    if (Math.abs(x - startX) < 10) draggingHandle = 'start';
+    else if (Math.abs(x - endX) < 10) draggingHandle = 'end';
+    else draggingHandle = null;
+});
+
+window.addEventListener('pointermove', (e) => {
+    if (!draggingHandle || !currentSpectrum) return;
+    const rect = elements.filterCanvas.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const maxFreq = Math.min(MAX_FREQUENCY, currentSpectrum.freqs[currentSpectrum.freqs.length - 1]);
+    const freq = (x / rect.width) * maxFreq;
+
+    if (draggingHandle === 'start') {
+        filterRange.start = Math.max(0, Math.min(freq, filterRange.end - 1));
+    } else {
+        filterRange.end = Math.min(maxFreq, Math.max(freq, filterRange.start + 1));
+    }
+    drawFilterSpectrum();
+});
+
+window.addEventListener('pointerup', () => { draggingHandle = null; });
+
+// --- INITIALIZATION ---
+window.addEventListener('resize', drawFilterSpectrum);
+document.addEventListener('DOMContentLoaded', loadAudio);
+
+</script>
+</body>
+</html>

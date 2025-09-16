@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="fa">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>تطابق موج — Wave Match</title>
+  <style>
+    @font-face {
+      font-family: 'B Zar';
+      src: url('fonts/BZar.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    :root {
+      --bg: #0f1724;
+      --panel: #0b1220;
+      --accent: #38bdf8;
+      --muted: rgba(255,255,255,0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'B Zar';
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: linear-gradient(180deg,#071026 0%, #071826 100%);
+      color: #E6EEF6;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 28px auto;
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+      border-radius: 12px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 12px 0;
+      text-align: center;
+    }
+
+    .game {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 18px;
+    }
+
+    .canvas-wrap {
+      background: var(--panel);
+      padding: 12px;
+      border-radius: 10px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 320px;
+      border-radius: 8px;
+      display: block;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    }
+
+    .controls {
+      padding: 12px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    label {
+      font-size: 13px;
+      color: #CFE9FF;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type=range] {
+      width: 100%;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    button {
+      background: var(--accent);
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: #013041;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: 'B Zar';
+    }
+
+    button.secondary {
+      background: transparent;
+      color: #CFE9FF;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .status {
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+      text-align: center;
+    }
+
+    .footer {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width:880px) {
+      .game {
+        grid-template-columns: 1fr;
+      }
+      .controls {
+        order: 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>بازی تطابق موج — موج هدف را با تغییر دامنه و طول موج مطابقت بده</h1>
+    <div class="game">
+      <div class="canvas-wrap">
+        <canvas id="waveCanvas" width="900" height="320" aria-label="موج"></canvas>
+      </div>
+
+      <div class="controls">
+        <div>
+          <label>دامنه (Amplitude): <span id="ampVal">0.6</span></label>
+          <div class="row"><input id="amp" type="range" min="0" max="1" step="0.01" value="0.6"></div>
+          <div class="small">دامنه موج شما را تغییر می‌دهد (چقدر بالا و پایین برود)</div>
+        </div>
+
+        <div>
+          <label>طول موج (Wavelength): <span id="lambdaVal">150</span> px</label>
+          <div class="row"><input id="lambda" type="range" min="40" max="400" step="1" value="150"></div>
+          <div class="small">فاصله بین قله‌ها. مقدار کوچکتر = فرکانس بیشتر</div>
+        </div>
+
+        <div>
+          <label>فاز / شیفت (Phase): <span id="phaseVal">0.00</span> rad</label>
+          <div class="row"><input id="phase" type="range" min="0" max="6.283" step="0.01" value="0"></div>
+          <div class="small">برای دقیق‌تر کردن مطابقت، فاز را تغییر بده</div>
+        </div>
+
+        <div class="row" style="justify-content:space-between">
+          <button id="randomBtn">مَشکل هدف را تصادفی کن</button>
+          <button id="checkBtn" class="secondary">بررسی تطابق</button>
+        </div>
+
+        <div class="status" id="status">همین حالا تغییر بده — موج هدف به رنگ کم‌رنگ نشان داده شده</div>
+        <div class="footer">نکته: برای بردن بازی، نمودار شما باید به اندازه کافی شبیه موج هدف شود (خطای RMS کمتر از آستانه)</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    const ampInput = document.getElementById('amp');
+    const lambdaInput = document.getElementById('lambda');
+    const phaseInput = document.getElementById('phase');
+    const ampVal = document.getElementById('ampVal');
+    const lambdaVal = document.getElementById('lambdaVal');
+    const phaseVal = document.getElementById('phaseVal');
+    const randomBtn = document.getElementById('randomBtn');
+    const checkBtn = document.getElementById('checkBtn');
+    const status = document.getElementById('status');
+
+    let W = canvas.width = canvas.clientWidth * devicePixelRatio;
+    let H = canvas.height = 320 * devicePixelRatio;
+    canvas.style.width = (W/devicePixelRatio) + 'px';
+    canvas.style.height = (H/devicePixelRatio) + 'px';
+    ctx.lineWidth = 2 * devicePixelRatio;
+
+    let target = {amp:0.5, lambda:180, phase:0.8};
+
+    function getPlayer(){
+      return {
+        amp: parseFloat(ampInput.value),
+        lambda: parseFloat(lambdaInput.value),
+        phase: parseFloat(phaseInput.value)
+      };
+    }
+
+    function updateLabels(){
+      ampVal.textContent = parseFloat(ampInput.value).toFixed(2);
+      lambdaVal.textContent = parseInt(lambdaInput.value);
+      phaseVal.textContent = parseFloat(phaseInput.value).toFixed(2);
+    }
+
+    ampInput.oninput = updateLabels;
+    lambdaInput.oninput = updateLabels;
+    phaseInput.oninput = updateLabels;
+    updateLabels();
+
+    function drawSine(cfg){
+      const {amp, lambda, phase, color, width, alpha} = cfg;
+      ctx.beginPath();
+      const midY = H/2;
+      const scaleY = H/2 * amp;
+      for(let x=0;x<=W;x+=2){
+        const t = x / lambda;
+        const y = midY - Math.sin(t * 2 * Math.PI + phase) * scaleY;
+        if(x===0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = width * devicePixelRatio;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawGrid(){
+      ctx.clearRect(0,0,W,H);
+      ctx.save();
+      ctx.globalAlpha = 0.06;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1 * devicePixelRatio;
+      for(let y=0;y<=H;y+=40*devicePixelRatio){
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+      }
+      for(let x=0;x<=W;x+=80*devicePixelRatio){
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function computeRMS(player, target){
+      let sum = 0, n = 0;
+      for(let x=0;x<=W;x+=4){
+        const t1 = x / target.lambda;
+        const y1 = Math.sin(2 * Math.PI * t1 + target.phase) * target.amp;
+        const t2 = x / player.lambda;
+        const y2 = Math.sin(2 * Math.PI * t2 + player.phase) * player.amp;
+        const d = y1 - y2;
+        sum += d * d;
+        n++;
+      }
+      const mse = sum / n;
+      return Math.sqrt(mse);
+    }
+
+    function render(){
+      drawGrid();
+      drawSine({amp:target.amp, lambda:target.lambda, phase:target.phase, color:'#9CA3FF', width:2, alpha:0.22});
+      const p = getPlayer();
+      drawSine({amp:p.amp, lambda:p.lambda, phase:p.phase, color:'#38BDF8', width:3, alpha:1});
+      ctx.font = `${12 * devicePixelRatio}px BZar`;
+      ctx.fillStyle = 'rgba(230,238,246,0.9)';
+      ctx.fillText('هدف: A=' + target.amp.toFixed(2) + ' λ=' + Math.round(target.lambda) + ' φ=' + target.phase.toFixed(2), 10 * devicePixelRatio, 16 * devicePixelRatio);
+      ctx.fillText('شما: A=' + p.amp.toFixed(2) + ' λ=' + Math.round(p.lambda) + ' φ=' + p.phase.toFixed(2), 10 * devicePixelRatio, 34 * devicePixelRatio);
+    }
+
+    function loop(){
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+
+    randomBtn.onclick = () => {
+      target.amp = (Math.random() * 0.7 + 0.15).toFixed(2) * 1;
+      target.lambda = Math.round(Math.random() * 300 + 50);
+      target.phase = (Math.random() * 6.283).toFixed(2) * 1;
+      status.textContent = 'هدف تصادفی شده — سعی کن با لغزنده‌ها شبیهش کنی';
+    }
+
+    checkBtn.onclick = () => {
+      const player = getPlayer();
+      const rms = computeRMS(player, target);
+      const threshold = 0.12;
+      if(rms < threshold){
+        status.innerHTML = `تبریک! شما بردید 🎉 — خطای RMS = ${rms.toFixed(3)}`;
+      } else {
+        status.innerHTML = `خطا: ${rms.toFixed(3)} — هنوز به هدف نرسیدی (آستانه ${threshold})`;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      W = canvas.width = canvas.clientWidth * devicePixelRatio;
+      H = canvas.height = 320 * devicePixelRatio;
+      canvas.style.width = (W / devicePixelRatio) + 'px';
+      canvas.style.height = (H / devicePixelRatio) + 'px';
+    });
+
+    randomBtn.click();
+  </script>
+</body>
+</html>

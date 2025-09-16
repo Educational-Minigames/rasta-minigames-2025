@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="utf-8" />
+<title>Mini Earth Game</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+:root { --bg:#001f3f; --accent:#0af; }
+body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:Tahoma, Arial, sans-serif; background:linear-gradient(180deg,#00162a 0%, #001f3f 100%); color:#fff; padding:20px; }
+.wrap { display:flex; gap:40px; align-items:center; justify-content:center; position:relative; width:100%; max-width:1200px; }
+.column { text-align:center; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.label { font-weight:bold; font-size:20px; }
+.sun { width:100px; height:100px; border-radius:50%; background:radial-gradient(circle at 25% 25%, #fff26b, #ffd700 40%, #ffb300 70%); box-shadow:0 0 40px rgba(255,200,0,0.6), inset 0 6px 12px rgba(255,255,255,0.2); }
+.moon { width:80px; height:80px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ddd, #999 70%); box-shadow:0 0 20px rgba(200,200,200,0.4), inset 0 6px 12px rgba(255,255,255,0.2); }
+.earth { width:320px; height:320px; border-radius:50%; overflow:hidden; border:4px solid var(--accent); position:relative; background:radial-gradient(circle at center, #0074D9 0%, #013042 80%); box-shadow:0 8px 30px rgba(0,0,0,0.6); touch-action:none; user-select:none; }
+.earth img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; -webkit-user-drag:none; transition: transform 0.1s linear; }
+.point { width:16px; height:16px; background:#ff4d4d; border:2px solid #fff; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); box-shadow:0 0 8px rgba(255,80,80,0.8); pointer-events:none; }
+.panel { position:fixed; bottom:18px; right:18px; display:flex; gap:14px; z-index:20; }
+.box { background: rgba(0,0,0,0.45); padding:10px 12px; border-radius:8px; min-width:120px; text-align:center; font-size:14px; }
+.analog-clock { width:80px; height:80px; border:3px solid #fff; border-radius:50%; position:relative; margin:6px auto; background: radial-gradient(circle at center, #222, #000); box-shadow:0 0 10px rgba(0,0,0,0.5); }
+.hand { position:absolute; bottom:50%; left:50%; transform-origin:bottom center; border-radius:2px; }
+.hour { width:4px; height:24px; background:#fff; }
+.minute { width:3px; height:32px; background:#0af; }
+@media (max-width:720px) { .wrap { flex-direction:column; gap:18px; } .panel { position:static; margin-top:12px; flex-wrap:wrap; justify-content:center; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="column">
+    <div class="label">خورشید</div>
+    <div class="sun" aria-hidden="true"></div>
+  </div>
+  <div class="column">
+    <div class="label">زمین</div>
+    <div class="earth" id="earth">
+      <img id="earthImg" src="https://cdn.mashreghnews.ir/d/old/files/fa/news/1391/1/23/154159_664.jpg" alt="Earth from North Pole">
+      <!-- SVG برای کمان -->
+      <svg id="arcSvg" width="100%" height="100%" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;">
+        <path id="arcPath" stroke="yellow" stroke-width="3" fill="none"/>
+      </svg>
+      <div class="point" id="point" aria-hidden="true"></div>
+    </div>
+  </div>
+  <div class="column">
+    <div class="label">ماه</div>
+    <div class="moon" aria-hidden="true"></div>
+  </div>
+  <div class="panel">
+    <div class="box">
+      <b>گرینویچ</b>
+      <div class="analog-clock" id="utcAnalog">
+        <div class="hand hour" id="utcHour"></div>
+        <div class="hand minute" id="utcMinute"></div>
+        <div class="hand second" id="utcSecond"></div>
+      </div>
+    </div>
+    <div class="box">
+      <b>ساعت محلی</b>
+      <div class="analog-clock" id="localAnalog">
+        <div class="hand hour" id="localHour"></div>
+        <div class="hand minute" id="localMinute"></div>
+        <div class="hand second" id="localSecond"></div>
+      </div>
+    </div>
+    <div class="box">
+      <b>Diff</b>
+      <div class="analog-clock" id="diffAnalog">
+        <div class="hand hour" id="diffHour"></div>
+        <div class="hand minute" id="diffMinute"></div>
+      </div>
+    </div>
+    <div class="box">
+      <b>طول جغرافیایی:</b> <span id="lon">0°</span><br>
+    </div>
+  </div>
+</div>
+
+<script>
+const INITIAL_OFFSET = -118; 
+(function(){
+  const earth=document.getElementById('earth');
+  const earthImg=document.getElementById('earthImg');
+  const point=document.getElementById('point');
+  const lonEl=document.getElementById('lon');
+  const arcPath=document.getElementById('arcPath');
+  
+  let earthAngle=0;   
+  let pointLon=0;     
+  let dragging=false;
+  let dragScreenAngle=0;
+  let initialLon=0; // نقطه اولیه ثابت (روی زمین می‌چرخه)
+
+  function normalize360(a){return((a%360)+360)%360;}
+  function normalize180(a){let n=normalize360(a); if(n>180)n-=360; return n;}
+  
+  function placePointByScreenAngle(screenAngleDeg){
+    const w=earth.clientWidth,h=earth.clientHeight;
+    const radius=Math.min(w,h)/2-16;
+    const rad=screenAngleDeg*Math.PI/180;
+    const x=radius*Math.cos(rad),y=radius*Math.sin(rad);
+    const leftPct=50+(x/(w/2))*50,topPct=50+(y/(h/2))*50;
+    point.style.left=leftPct+"%";
+    point.style.top=topPct+"%";
+  }
+
+  function rotateClock(idPrefix,date){
+    const hour=date.getUTCHours()%12,
+          minute=date.getUTCMinutes();
+    document.getElementById(idPrefix+'Hour').style.transform=`rotate(${(hour*30+minute*0.5)}deg)`;
+    document.getElementById(idPrefix+'Minute').style.transform=`rotate(${minute*6}deg)`;
+  }
+  
+  function updateClocks(angle, lon){
+    let totalMinutes = (normalize360(angle)) * 4; 
+    let utcHours = Math.floor(totalMinutes / 60) % 24;
+    let utcMinutes = Math.floor(totalMinutes % 60);
+  
+    let utcDate = new Date(Date.UTC(2020,0,1,utcHours,utcMinutes));
+  
+    let offsetMinutes = Math.round(lon * 4);
+    let localDate = new Date(utcDate.getTime() + offsetMinutes*60*1000);
+  
+    rotateClock('utc', utcDate);
+    rotateClock('local', localDate);
+
+    let diffMs = localDate - utcDate;
+    let diffMinutes = Math.floor(diffMs / 60000);
+    let diffHours = Math.floor(diffMinutes / 60);
+    let diffMins = diffMinutes % 60;
+    diffHours = (diffHours + 24) % 24 > 12 ? 24-(diffHours  + 12 + 12 ) % 24 :(diffHours + 24) % 24 ;
+
+    let diffDate = new Date(Date.UTC(2020,0,1,diffHours,diffMins));
+    rotateClock('diff', diffDate);
+  }
+
+  // تابع رسم کمان
+// تابع رسم کمان
+function updateArc(currentLon){
+  const w = earth.clientWidth, h = earth.clientHeight;
+  const r = Math.min(w,h)/2 - 16;
+
+  function lonToXY(lon){
+    const rad = (lon+180) * Math.PI/180;
+    return [w/2 + r*Math.cos(rad), h/2 + r*Math.sin(rad)];
+  }
+
+  // نقطه اولیه که همراه زمین می‌چرخه
+  const startLon = initialLon + earthAngle;
+  // نقطه فعلی
+  const endLon = currentLon + earthAngle;
+
+  const [x1,y1] = lonToXY(startLon);
+  const [x2,y2] = lonToXY(endLon);
+
+  // اختلاف زاویه نرمالایز شده
+  let diff = (endLon - startLon);
+  diff = ((diff % 360) + 360) % 360;
+
+  // تعیین پرچم‌ها
+  const largeArcFlag = diff > 180 ? 1 : 0;
+  const sweepFlag = 1; // جهت مثبت (پادساعتگرد)
+
+  const arc = `M ${x1},${y1} A ${r},${r} 0 ${largeArcFlag},${sweepFlag} ${x2},${y2}`;
+  arcPath.setAttribute("d", arc);
+}
+  function updateAll(){
+    let screenAngle = dragging 
+        ? dragScreenAngle 
+        : pointLon + earthAngle + 180; 
+  
+    placePointByScreenAngle(screenAngle);
+  
+    const displayedLon = normalize180(
+        dragging ? (dragScreenAngle - earthAngle) - 180 : pointLon
+    );
+    lonEl.textContent = displayedLon.toFixed(1) + "°";
+  
+    earthImg.style.transform = `rotate(${earthAngle-INITIAL_OFFSET}deg)`;
+  
+    updateClocks(earthAngle, displayedLon);
+    updateArc(displayedLon);
+  }
+  
+  function setAngleFromClient(clientX,clientY){
+    const rect=earth.getBoundingClientRect();
+    const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    const dx=clientX-cx,dy=clientY-cy;
+    dragScreenAngle=Math.atan2(dy,dx)*180/Math.PI;
+    updateAll();
+  }
+  
+  // کنترل ماوس
+  earth.addEventListener('mousedown',(e)=>{dragging=true; setAngleFromClient(e.clientX,e.clientY);});
+  window.addEventListener('mousemove',(e)=>{if(!dragging)return; setAngleFromClient(e.clientX,e.clientY);});
+  window.addEventListener('mouseup',(e)=>{
+    if(!dragging) return;
+    pointLon = normalize180(dragScreenAngle - earthAngle)-180;
+    dragging = false;
+    updateAll();
+  });  
+  // کنترل لمسی
+  earth.addEventListener('touchstart',(e)=>{e.preventDefault(); dragging=true; const t=e.touches[0]; setAngleFromClient(t.clientX,t.clientY);},{passive:false});
+  window.addEventListener('touchmove',(e)=>{if(!dragging)return; const t=e.touches[0]; setAngleFromClient(t.clientX,t.clientY);},{passive:false});
+  window.addEventListener('touchend',(e)=>{
+    if(!dragging) return;
+    pointLon = normalize180(dragScreenAngle - earthAngle)-180;
+    dragging = false;
+    updateAll();
+  });  
+  updateAll();
+  
+  function animate(){
+    earthAngle += 0.1; 
+    updateAll();
+    requestAnimationFrame(animate);
+  }
+  animate();
+  
+  window.addEventListener('resize',updateAll);
+})();
+</script>
+</body>
+</html>
