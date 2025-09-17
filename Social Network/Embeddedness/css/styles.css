@@ -269,7 +269,9 @@ svg g.clickable:hover rect {
     }
 
     .canvas-wrap {
-        inset: 84px 18px 16px 18px
+        inset: 84px 18px 16px 18px;
+        padding: 30px !important;
+        overflow: visible;
     }
 
     .node-label {
@@ -292,6 +294,11 @@ svg g.clickable:hover rect {
         font-size: 15px
     }
 
+    .canvas-wrap {
+        padding: 15px;
+        position: fixed;
+    }
+
     .btn {
         padding: 12px 14px;
         font-size: 10px;
@@ -300,8 +307,18 @@ svg g.clickable:hover rect {
 
 
     .topbar h1 {
-        font-size: 16px
+        font-size: 16px;
+        margin-bottom: 16px;
     }
 
 
+    .topbar {
+        display: block;
+    }
+
+    .controls {
+        position: fixed;
+        z-index: 1000;
+
+    }
 }

@@ -83,9 +83,9 @@
       // adapt node sizes for small screens
       const small = dim.WIDTH < 700;
       if(small){
-        NODE_USER_SIZE = 64;
-        NODE_CONTENT_W = 72; NODE_CONTENT_H = 56;
-        IMG_USER = 56; IMG_CONTENT = 48;
+        NODE_USER_SIZE = 54;
+        NODE_CONTENT_W =48 ; NODE_CONTENT_H = 40;
+        IMG_USER = 40 ; IMG_CONTENT = 30;
       } else {
         NODE_USER_SIZE = 56;
         NODE_CONTENT_W = 64; NODE_CONTENT_H = 48;
@@ -199,9 +199,10 @@
       ev.stopPropagation();
       const g = ev.currentTarget; const id = g.dataset.id; const type = g.dataset.type;
       if(stage === 1 && type !== 'user'){ pulse('مرحلهٔ ۱: فقط کاربران را انتخاب کن'); return; }
-      if(stage === 2 && type !== 'content'){ pulse('مرحلهٔ ۲: فقط محتواها را انتخاب کن'); return; }
+      if (stage === 2 && type !== 'content') { pulse('مرحلهٔ ۲: فقط محتواها را انتخاب کن'); return; }
+      if (stage == 3 && type == 'content') return;
 
-      if(selected.includes(id)) selected = selected.filter(x=>x!==id);
+      if(selected.includes(id) && stage!=3) selected = selected.filter(x=>x!==id);
       else {
         const max = stage === 3 ? 4 : 2;
         if(selected.length >= max){ pulse('به حد مجاز انتخاب رسیدی'); return; }
