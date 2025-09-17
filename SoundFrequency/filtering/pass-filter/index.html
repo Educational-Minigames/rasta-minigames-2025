@@ -18,8 +18,8 @@
       --text-muted: #6b7280;
       --waveform: #000080;
       --spectrum: #000080;
-      --selection: rgba(217, 83, 79, 0.2);
-      --handle: #d9534f;
+      --selection: rgba(0, 0, 128, 0.2);
+      --handle: #000080;
       --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       --shadow-small: 0 4px 16px rgba(0, 0, 0, 0.08);
     }
@@ -211,60 +211,57 @@
 </head>
 <body>
   <div class="container">
-    <h3>Frequency Noise Reducer</h3>
 
     <!-- Original Signal -->
     <div class="visualization-section">
-      <div class="section-title">🔊 Original Noisy Signal</div>
+      <div class="section-title" , style="direction: rtl;">صدای دارای نویز</div>
       <div class="plot-grid">
-        <div class="plot-container"><div class="plot-label">Time Domain</div><canvas id="originalWaveform"></canvas></div>
-        <div class="plot-container"><div class="plot-label">Frequency Domain</div><canvas id="originalSpectrum"></canvas></div>
+        <div class="plot-container"><div class="plot-label">حوزه‌ی زمان</div><canvas id="originalWaveform"></canvas></div>
+        <div class="plot-container"><div class="plot-label">حوزه‌ی فرکانس</div><canvas id="originalSpectrum"></canvas></div>
       </div>
       <div class="play-controls">
         <button class="play-btn" id="playOriginalBtn" disabled>▶️</button>
-        <span>Listen to Original</span>
       </div>
     </div>
 
     <!-- Filter Selection -->
-    <div class="visualization-section">
-      <div class="section-title">✂️ Frequency Filter Selection</div>
+    <div class="visualization-section", style="direction: rtl;">
+      <div class="section-title">انتخاب بخشی از سیگنال در حوزه‌ی فرکانس</div>
       <canvas id="filterCanvas"></canvas>
       <div class="controls">
         <div class="freq-display">
-          <span class="freq-label">Start: </span><span class="freq-value"><span id="fStart">0.00</span> Hz</span>
+          <span class="freq-label">شروع: </span><span class="freq-value"><span id="fStart">0.00</span> Hz</span>
         </div>
         <div class="freq-display">
-          <span class="freq-label">End: </span><span class="freq-value"><span id="fEnd">0.00</span> Hz</span>
+          <span class="freq-label">پایان: </span><span class="freq-value"><span id="fEnd">0.00</span> Hz</span>
         </div>
-        <div class="instruction">💡 Drag the red handles to select a frequency range to remove.</div>
+        <div class="instruction">به کمک دسته‌های آبی بخشی از سیگنال در حوزه‌ی فرکانس را انتخاب کنید.</div>
       </div>
     </div>
 
     <!-- Action Button -->
     <div class="action-section">
       <button id="applyFilterBtn" disabled>
-        <span id="btnText">🔄 Apply Filter & Invert FFT</span>
+        <span id="btnText">اعمال فیلتر و برگشت به حوزه‌ی زمان</span>
       </button>
     </div>
 
     <!-- Filtered Signal -->
     <div class="visualization-section" id="filteredSection" style="display:none;">
-      <div class="section-title">✨ Filtered (Denoised) Signal</div>
+      <div class="section-title", style="direction: rtl;">سیگنال فیلتر شده</div>
        <div class="plot-grid">
-        <div class="plot-container"><div class="plot-label">Time Domain</div><canvas id="filteredWaveform"></canvas></div>
-        <div class="plot-container"><div class="plot-label">Frequency Domain</div><canvas id="filteredSpectrum"></canvas></div>
+        <div class="plot-container"><div class="plot-label">حوزه‌ی زمان</div><canvas id="filteredWaveform"></canvas></div>
+        <div class="plot-container"><div class="plot-label">حوزه‌ی فرکانس</div><canvas id="filteredSpectrum"></canvas></div>
       </div>
       <div class="play-controls">
         <button class="play-btn" id="playFilteredBtn" disabled>▶️</button>
-        <span>Listen to Filtered</span>
       </div>
     </div>
   </div>
 
 <script>
 // --- CONFIGURATION ---
-const SOUND_URL = 'sound.mp3';
+const SOUND_URL = '../sound.mp3';
 const MAX_FREQUENCY = 4000;
 
 // --- DOM ELEMENTS ---
@@ -317,6 +314,7 @@ function drawWaveform(canvas, data, color = 'var(--waveform)') {
     const step = data.length / w;
     let maxAmp = 0;
     for (let i = 0; i < data.length; i++) maxAmp = Math.max(maxAmp, Math.abs(data[i]));
+    if (maxAmp === 0) maxAmp = 1; // Avoid division by zero
     for (let i = 0; i < w; i++) {
         const index = Math.floor(i * step);
         const val = data[index] / maxAmp;
@@ -364,9 +362,25 @@ function drawFilterSpectrum() {
     ctx.fillRect(startX, 0, endX - startX, h);
 
     // Handles
+    const hr = 8; // handle radius
     ctx.fillStyle = getComputedStyle(elements.filterCanvas).getPropertyValue('--handle').trim();
-    ctx.fillRect(startX - 2, 0, 4, h);
-    ctx.fillRect(endX - 2, 0, 4, h);
+    
+    // Start Handle
+    ctx.beginPath();
+    ctx.arc(startX, h/2, hr, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // End Handle
+    ctx.beginPath();
+    ctx.arc(endX, h/2, hr, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Handle labels
+    ctx.fillStyle = getComputedStyle(elements.filterCanvas).getPropertyValue('--text-primary').trim();
+    ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('START', startX, h / 2 - hr * 1.5);
+    ctx.fillText('END', endX, h / 2 - hr * 1.5);
 
     elements.fStart.textContent = filterRange.start.toFixed(2);
     elements.fEnd.textContent = filterRange.end.toFixed(2);
@@ -463,7 +477,7 @@ async function loadAudio() {
         
         elements.playOriginalBtn.disabled = false;
         elements.applyFilterBtn.disabled = false;
-        elements.btnText.innerHTML = '🔄 Apply Filter & Invert FFT';
+        elements.btnText.innerHTML = 'اعمال فیلتر و برگشت به حوزه‌ی زمان';
 
     } catch (err) {
         alert('Error loading audio: ' + err.message);
@@ -502,9 +516,9 @@ elements.applyFilterBtn.addEventListener('click', () => {
     setTimeout(() => { // Allow UI to update
         const { real, imag, N, freqs } = computeSpectrumData(monoSignal);
         
-        // Apply band-stop filter
+        // Apply band-pass filter
         for (let k = 0; k < freqs.length; k++) {
-            if (freqs[k] >= filterRange.start && freqs[k] <= filterRange.end) {
+            if (freqs[k] < filterRange.start || freqs[k] > filterRange.end) {
                 real[k] = 0; imag[k] = 0;
                 if (k > 0) { // Mirror for negative frequencies
                     real[N - k] = 0; imag[N - k] = 0;
@@ -526,20 +540,21 @@ elements.applyFilterBtn.addEventListener('click', () => {
         elements.filteredSection.style.display = 'block';
         elements.playFilteredBtn.disabled = false;
         elements.applyFilterBtn.disabled = false;
-        elements.btnText.innerHTML = '🔄 Apply Filter & Invert FFT';
+        elements.btnText.innerHTML = 'اعمال فیلتر و برگشت به حوزه‌ی زمان';
     }, 50);
 });
 
 let draggingHandle = null;
 elements.filterCanvas.addEventListener('pointerdown', (e) => {
+    if (!currentSpectrum) return;
     const rect = elements.filterCanvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const maxFreq = Math.min(MAX_FREQUENCY, currentSpectrum.freqs[currentSpectrum.freqs.length - 1]);
     const startX = (filterRange.start / maxFreq) * rect.width;
     const endX = (filterRange.end / maxFreq) * rect.width;
 
-    if (Math.abs(x - startX) < 10) draggingHandle = 'start';
-    else if (Math.abs(x - endX) < 10) draggingHandle = 'end';
+    if (Math.abs(x - startX) < 15) draggingHandle = 'start';
+    else if (Math.abs(x - endX) < 15) draggingHandle = 'end';
     else draggingHandle = null;
 });
 
@@ -567,3 +582,4 @@ document.addEventListener('DOMContentLoaded', loadAudio);
 </script>
 </body>
 </html>
+
