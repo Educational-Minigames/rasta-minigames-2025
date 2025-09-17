@@ -1,4 +1,3 @@
-// Final upgraded app.js - implementing requested changes
 const USERS = {
   a:{id:'a',coord:{x:-1,y:0}, avatar:'assets/001-user.png'},
   b:{id:'b',coord:{x:0,y:1}, avatar:'assets/002-user.png'},
@@ -8,18 +7,15 @@ const USERS = {
 
 const USER_EDGES = [ ['a','c'], ['c','d'], ['a','d'], ['b','d'] ];
 
-// fixed content positions for three rounds as requested
-const FIXED_CONTENT_COORDS = [ {x:-0.5,y:2}, {x:0.5,y:-2}, {x:-1.5,y:-3} ];
-const CONTENT_EMOJIS = ['🍫','🎸','🎵']; // can extend
+const FIXED_CONTENT_COORDS = [ {x:-0.5,y:2}, {x:0.5,y:-2}, {x:-1.5,y:-3} , {x:1.5,y:2},{x:-2,y:-0.5},{x:-1.4,y:1.1} ];
+const CONTENT_EMOJIS = ['🍫','🎸','🎵', '🚬' , '💻' , '🕊']; // can extend
 
-// map reactions to values
 const REACTION_VALUES = [1,0.5,0,-0.5,-1];
 const EMOJI_MAP = { '1':'😍', '0.5':'🙂', '0':'🙁', '-0.5':'🤢', '-1':'☠' };
 
-// generate stages with fixed coords & non-close nodes
 function generateStages(){
   const stages = [];
-  for(let i=0;i<3;i++){
+  for(let i=0;i<CONTENT_EMOJIS.length;i++){
     const coord = FIXED_CONTENT_COORDS[i] || {x:-0.5, y:2 + i*0.5};
     const icon = CONTENT_EMOJIS[i % CONTENT_EMOJIS.length];
     const userIds = Object.keys(USERS);
