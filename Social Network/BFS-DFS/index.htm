@@ -4,37 +4,265 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>BFS & DFS Minigame</title>
+    <title>مینی گیم انتشار — نهایی</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #071424;
+            --accent: #bfefff;
+            --blue: #3bacf7;
+            --yellow: #ffd358;
+            --bfs-red: #e63946;
+            --muted: #9fb7c9;
+            --panel-shadow: 0 18px 48px rgba(2, 10, 18, 0.6);
+            --font: 'Vazirmatn', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+            --arrow-fill: rgba(255, 211, 88, 0.92);
+            --arrow-stroke: rgba(1, 30, 40, 0.95);
+            --edge: #2b9fe9;
+        }
 
-    <link rel="stylesheet" href="css/styles.css">
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: linear-gradient(180deg, #071424, #072833);
+            font-family: var(--font);
+            color: var(--accent);
+            -webkit-font-smoothing: antialiased
+        }
+
+        .app-header {
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 18px
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 4px
+        }
+
+        .brand .title {
+            margin: 0;
+            font-size: 18px;
+            color: var(--blue);
+            font-weight: 800;
+            line-height: 1
+        }
+
+        .brand .subtitle {
+            margin: 0;
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            transition: transform .12s, box-shadow .12s;
+            background: linear-gradient(180deg, var(--blue), #2b96e6);
+            color: #fff;
+            box-shadow: 0 10px 28px rgba(59, 172, 247, 0.06);
+            font-family: var(--font)
+        }
+
+        .btn.secondary {
+            background: linear-gradient(180deg, var(--yellow), #ffd358);
+            color: #072033;
+            box-shadow: 0 10px 28px rgba(255, 211, 88, 0.06)
+        }
+
+        .btn.ghost {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--blue);
+            box-shadow: none
+        }
+
+        .btn:hover {
+            transform: translateY(-2px)
+        }
+
+        .btn:active {
+            transform: translateY(1px)
+        }
+
+        .canvas-wrap {
+            height: calc(100vh - 68px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px;
+            overflow: hidden
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center
+        }
+
+        #graphCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 8px;
+            box-shadow: var(--panel-shadow);
+            touch-action: none;
+            cursor: grab;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 30%)
+        }
+
+        .tooltip {
+            position: absolute;
+            display: none;
+            pointer-events: none;
+            transform: translate(-50%, -120%);
+            background: #fff;
+            color: #072033;
+            padding: 8px 10px;
+            border-radius: 8px;
+            box-shadow: 0 12px 36px rgba(2, 18, 30, 0.14);
+            font-size: 13px;
+            z-index: 60
+        }
+
+        .info-floating {
+            position: absolute;
+            top: 92px;
+            right: 18px;
+            z-index: 55;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end
+        }
+
+        .info-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .info-row .value {
+            font-weight: 800;
+            color: var(--accent);
+            margin-right: 6px
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 8, 18, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 7000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .14s
+        }
+
+        .modal-backdrop.open {
+            opacity: 1;
+            pointer-events: auto
+        }
+
+        .modal {
+            width: min(760px, 94%);
+            background: #fff;
+            color: #072033;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 28px 68px rgba(7, 20, 40, 0.28)
+        }
+
+        .modal h4 {
+            margin: 0 0 10px 0;
+            color: var(--blue)
+        }
+
+        @media (max-width:600px) {
+            .app-header {
+                height: 84px;
+                padding: 10px
+            }
+
+            .brand .title {
+                font-size: 16px
+            }
+
+            .info-floating {
+                right: 12px;
+                top: 100px
+            }
+
+            .brand {
+                display: none
+            }
+
+            * {
+                font-size: .7rem !important
+            }
+
+            .canvas-container {
+                width: 200%
+            }
+        }
+    </style>
 </head>
 
 <body>
     <header class="app-header" role="banner">
         <div class="brand">
-            <h1 class="title">مینی گیم عمق و سطح</h1>
-            <p class="subtitle">آشنایی با BFS و DFS</p>
+            <h1 class="title">مینی گیم انتشار</h1>
+            <p class="subtitle">آشنایی با انتشار (BFS)</p>
         </div>
 
         <div class="controls" role="toolbar" aria-label="ابزارها">
             <button id="btnHelp" class="btn ghost" type="button">راهنما</button>
             <button id="btnClear" class="btn secondary" type="button">پاک‌سازی</button>
-            <button id="btnBfsSel" class="btn" type="button">اجرای BFS</button>
-            <button id="btnDfsSel" class="btn" type="button">اجرای DFS</button>
+            <button id="btnBfsSel" class="btn" type="button">اجرای انتشار</button>
+            <button id="btnDelete" class="btn ghost" type="button" title="پس از انتخاب دو کاربر، این دکمه را بزنید">حذف
+                یال</button>
             <button id="btnRedraw" class="btn ghost" type="button">بازآرایی / ریست</button>
         </div>
     </header>
 
     <main class="canvas-wrap" role="main">
         <div class="info-floating" id="infoFloating" aria-hidden="false">
-            <div class="info-row"><span class="label">نودها:</span><span id="nodesTotal" class="value">—</span></div>
-            <div class="info-row"><span class="label">مؤلفه‌ها:</span><span id="componentsCount" class="value">—</span>
-            </div>
+            <div class="info-row"><span class="label">کاربران:</span><span id="nodesTotal" class="value">—</span></div>
+            <div class="info-row"><span class="label">تعداد گروه افراد مجزا از هم:</span><span id="componentsCount"
+                    class="value">—</span></div>
             <div class="info-row"><span class="label">بازدیدشدند:</span><span id="visitedCount" class="value">0</span>
             </div>
-            <div class="info-row"><span class="label">مرحله:</span><span id="currentLevel" class="value">0</span></div>
+            <div class="info-row"><span class="label">مرحله/قدم:</span><span id="currentLevel" class="value">0</span>
+            </div>
             <div class="info-row"><span class="label">انتخاب:</span><span id="selectedList"
                     class="value">هیچ‌کدام</span></div>
         </div>
@@ -44,20 +272,18 @@
         </div>
     </main>
 
-    <!-- Modal راهنما -->
     <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
             <h4 id="helpTitle">راهنما</h4>
             <div class="modal-body">
                 <p>دستورالعمل‌ها:</p>
                 <ul>
-                    <li>کلیک معمولی: انتخاب یک نود. Shift+کلیک: انتخاب چندگانه.</li>
-                    <li>کلیک وسط یا نگه‌داشتن طولانی (در موبایل) روی نود → اجرای BFS به صورت لایه‌ای (فقط لایهٔ جاری
-                        قرمز می‌شود؛ پس از عبور، نودها به رنگ «بازدیدشده» درمی‌آیند).</li>
-                    <li>یا از دکمهٔ <strong>اجرای BFS</strong> استفاده کن بعد از انتخاب یک نود.</li>
-                    <li>دکمهٔ <strong>اجرای DFS</strong> ترتیب عمقی را نمایش می‌دهد (نود جاری لحظه‌ای هایلایت می‌شود؛ پس
-                        از عبور رنگ «بازدیدشده» می‌گیرد).</li>
-                    <li>برای حذف یال: دو نود انتخاب کن و Enter را بزن — تنها همان یال حذف می‌شود.</li>
+                    <li>تپ تکی (یا کلیک): انتخاب یک کاربر.</li>
+                    <li>دوبار تپ / دوبار کلیک: انتخاب / لغو انتخاب کاربر.</li>
+                    <li>Shift+کلیک: انتخاب چندگانه در دسکتاپ. نگه‌داشتن طولانی در موبایل هم انتخاب می‌کند.</li>
+                    <li>از دکمهٔ <strong>اجرای انتشار</strong> پس از انتخاب یک کاربر استفاده کن.</li>
+                    <li>برای حذف یال: دو کاربر را انتخاب کن سپس دکمهٔ <strong>حذف یال</strong> را بزن — یال بین آن دو
+                        حذف خواهد شد.</li>
                     <li>برای ریست کامل (برگرداندن همهٔ یال‌های حذف‌شده و بازنشانی وضعیت): دکمهٔ <strong>بازآرایی /
                             ریست</strong> را بزن.</li>
                 </ul>
@@ -70,7 +296,619 @@
 
     <div id="tooltip" class="tooltip" aria-hidden="true"></div>
 
-    <script type="module" src="js/graph_canvas.js"></script>
+    <script type="module">
+        // ---------- Data ----------
+        const NODES = Array.from({ length: 22 }, (_, i) => i + 1);
+        const EDGES = [
+            [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [1, 7], [1, 8], [1, 9],
+            [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [8, 1], [9, 1],
+            [10, 3], [10, 4], [10, 5],
+            [6, 11], [11, 10], [10, 11], [11, 12],
+            [7, 13], [8, 13],
+            [13, 14], [14, 15], [15, 16], [16, 17],
+            [17, 18], [18, 19], [18, 21],
+            [22, 17], [17, 20],
+            [10, 15],
+            [19, 22]
+        ];
+        const INITIAL_EDGES = EDGES.map(e => [e[0], e[1]]);
+
+        // ---------- State ----------
+        let adjacency = new Map();
+        let reverseAdj = new Map();
+        let positions = new Map();
+        let selected = [];
+        let visitedGlobal = new Set(); // persistent visited nodes (برای انتشار)
+        let currentBfsLevel = 0;
+        let activeLayerSet = null;
+        let lastTraversal = null;
+
+        // ---------- DOM ----------
+        const canvas = document.getElementById('graphCanvas');
+        const container = document.getElementById('canvasContainer');
+        const tooltip = document.getElementById('tooltip');
+        const infoEls = {
+            nodesTotal: document.getElementById('nodesTotal'),
+            componentsCount: document.getElementById('componentsCount'),
+            visitedCount: document.getElementById('visitedCount'),
+            currentLevel: document.getElementById('currentLevel'),
+            selectedList: document.getElementById('selectedList')
+        };
+        const btnDelete = document.getElementById('btnDelete');
+        const ctx = canvas.getContext('2d', { alpha: true });
+
+        // ---------- Colors ----------
+        const css = getComputedStyle(document.documentElement);
+        const COLORS = {
+            nodeDefault: css.getPropertyValue('--yellow')?.trim() || '#ffd358',
+            nodeVisited: '#43aa8b',
+            nodeBfs: css.getPropertyValue('--bfs-red')?.trim() || '#e63946',
+            edge: css.getPropertyValue('--edge')?.trim() || '#2b9fe9',
+            arrowFill: css.getPropertyValue('--arrow-fill')?.trim() || 'rgba(255,211,88,0.92)',
+            arrowStroke: css.getPropertyValue('--arrow-stroke')?.trim() || 'rgba(1,30,40,0.95)',
+            blue: css.getPropertyValue('--blue')?.trim() || '#3bacf7',
+            accent: css.getPropertyValue('--accent')?.trim() || '#bfefff'
+        };
+
+        // ---------- Canvas resize ----------
+        function resizeCanvas() {
+            const dpr = Math.max(1, window.devicePixelRatio || 1);
+            const rect = container.getBoundingClientRect();
+            const cssW = Math.max(480, rect.width), cssH = Math.max(360, rect.height);
+            canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
+            canvas.width = Math.floor(cssW * dpr); canvas.height = Math.floor(cssH * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        // ---------- View transform ----------
+        let view = { tx: 0, ty: 0, scale: 1 };
+        function worldToScreen(wx, wy) { return { x: view.tx + view.scale * wx, y: view.ty + view.scale * wy }; }
+        function screenToWorld(sx, sy) { return { x: (sx - view.tx) / view.scale, y: (sy - view.ty) / view.scale }; }
+
+        // ---------- Adjacency builders ----------
+        function initAdjMapsFromList(list) {
+            adjacency = new Map(); for (const n of NODES) adjacency.set(n, new Set());
+            for (const [u, v] of list) { if (!adjacency.has(u)) adjacency.set(u, new Set()); adjacency.get(u).add(v); }
+        }
+        function buildReverseAdj() {
+            reverseAdj = new Map(); for (const n of NODES) reverseAdj.set(n, new Set());
+            for (const [u, neigh] of adjacency.entries()) for (const v of neigh) { if (!reverseAdj.has(v)) reverseAdj.set(v, new Set()); reverseAdj.get(v).add(u); }
+        }
+        initAdjMapsFromList(INITIAL_EDGES);
+        buildReverseAdj();
+
+        // ---------- Descendants helper ----------
+        function getDescendants(roots = []) {
+            const out = new Set(); const q = [...roots];
+            while (q.length) { const u = q.shift(); for (const v of (adjacency.get(u) || [])) { if (!out.has(v)) { out.add(v); q.push(v); } } }
+            return out;
+        }
+
+        // ---------- Layout ----------
+        function bfs_levels_from_root(root = 1) {
+            const levels = new Map();
+            if (!NODES.includes(root)) return levels;
+            const visited = new Set(); const q = [root];
+            levels.set(root, 0); visited.add(root);
+            while (q.length) {
+                const u = q.shift(); const lvl = levels.get(u);
+                for (const v of adjacency.get(u) || []) if (!visited.has(v)) { visited.add(v); levels.set(v, lvl + 1); q.push(v); }
+            }
+            let nextLvl = (levels.size ? Math.max(...levels.values()) + 1 : 1);
+            for (const n of NODES) if (!levels.has(n)) levels.set(n, nextLvl++);
+            return levels;
+        }
+
+        function computeLayout() {
+            positions = new Map();
+            const levels = bfs_levels_from_root(1);
+            const buckets = new Map();
+            for (const [n, l] of levels.entries()) { if (!buckets.has(l)) buckets.set(l, []); buckets.get(l).push(n); }
+            const keys = Array.from(buckets.keys()).sort((a, b) => a - b);
+            const xGap = 280, yGap = 140;
+            const specialRoots = [18, 20];
+            const specialDesc = getDescendants(specialRoots); specialRoots.forEach(r => specialDesc.add(r));
+            for (const lvl of keys) {
+                const nodes = buckets.get(lvl).slice().sort((a, b) => a - b);
+                const centerIdx = (nodes.length - 1) / 2;
+                let x = -centerIdx * xGap;
+                for (let i = 0; i < nodes.length; i++) {
+                    const node = nodes[i]; let extraShift = 0;
+                    if (specialDesc.has(node)) {
+                        const offsetFromCenter = i - centerIdx;
+                        extraShift = Math.sign(offsetFromCenter || 1) * Math.abs(offsetFromCenter) * xGap * 0.28;
+                    }
+                    positions.set(node, [x + extraShift, lvl * yGap]);
+                    x += xGap;
+                }
+            }
+            const maxLvl = keys.length ? Math.max(...keys) : 0;
+            for (const n of NODES) if (!positions.has(n)) positions.set(n, [0, (maxLvl + 1) * yGap + 10]);
+            fitWorldToScreen();
+        }
+
+        function fitWorldToScreen() {
+            const coords = Array.from(positions.values()); if (!coords.length) return;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const [x, y] of coords) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
+            const nodeR = 20, margin = 80;
+            minX -= nodeR + margin; minY -= nodeR + margin; maxX += nodeR + margin; maxY += nodeR + margin;
+            const worldW = Math.max(720, maxX - minX), worldH = Math.max(520, maxY - minY);
+            const rect = container.getBoundingClientRect();
+            const cw = Math.max(600, rect.width), ch = Math.max(420, rect.height);
+            let scale = Math.min(cw / worldW, ch / worldH) * 0.98; scale *= 1.02;
+            view.scale = scale;
+            const centerWorldX = (minX + maxX) / 2, centerWorldY = (minY + maxY) / 2;
+            view.tx = cw / 2 - view.scale * centerWorldX; view.ty = ch / 2 - view.scale * centerWorldY;
+        }
+
+        // ---------- Draw helpers ----------
+        function clamp(min, max, v) { return Math.max(min, Math.min(max, v)); }
+
+        function quadPointAndTangent(x0, y0, cx, cy, x2, y2, t) {
+            const mt = 1 - t;
+            const bx = mt * mt * x0 + 2 * mt * t * cx + t * t * x2;
+            const by = mt * mt * y0 + 2 * mt * t * cy + t * t * y2;
+            const dx = 2 * mt * (cx - x0) + 2 * t * (x2 - cx);
+            const dy = 2 * mt * (cy - y0) + 2 * t * (y2 - cy);
+            return { bx, by, dx, dy };
+        }
+
+        function drawArrowOnQuad(x0, y0, cx, cy, x2, y2, t, size, fillColor, strokeColor, flip = false) {
+            const { bx, by, dx, dy } = quadPointAndTangent(x0, y0, cx, cy, x2, y2, t);
+            let ux = dx, uy = dy; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
+            if (flip) { ux = -ux; uy = -uy; }
+            const ox = -uy, oy = ux;
+            ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.16)'; ctx.shadowBlur = 8;
+            ctx.beginPath(); ctx.moveTo(bx, by);
+            ctx.lineTo(bx - ux * size + ox * (size * 0.45), by - uy * size + oy * (size * 0.45));
+            ctx.lineTo(bx - ux * size - ox * (size * 0.45), by - uy * size - oy * (size * 0.45)); ctx.closePath();
+            ctx.fillStyle = fillColor; ctx.fill(); ctx.lineWidth = Math.max(1.6, Math.round(1.8 * view.scale));
+            ctx.strokeStyle = strokeColor; ctx.stroke(); ctx.restore();
+        }
+
+        function drawArrowOnLine(x0, y0, x1, y1, size, fillColor, strokeColor, flip = false) {
+            const dx = x1 - x0, dy = y1 - y0; let ux = dx, uy = dy; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
+            if (flip) { ux = -ux; uy = -uy; }
+            const bx = x1, by = y1, ox = -uy, oy = ux;
+            ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.16)'; ctx.shadowBlur = 8;
+            ctx.beginPath(); ctx.moveTo(bx, by);
+            ctx.lineTo(bx - ux * size + ox * (size * 0.45), by - uy * size + oy * (size * 0.45));
+            ctx.lineTo(bx - ux * size - ox * (size * 0.45), by - uy * size - oy * (size * 0.45)); ctx.closePath();
+            ctx.fillStyle = fillColor; ctx.fill(); ctx.lineWidth = Math.max(1.6, Math.round(1.8 * view.scale));
+            ctx.strokeStyle = strokeColor; ctx.stroke(); ctx.restore();
+        }
+
+        // ---------- Edge rendering ----------
+        function computeEdgeEndpoints(p1, p2, nodeRadius) {
+            const dx = p2.x - p1.x, dy = p2.y - p1.y;
+            const adx = Math.abs(dx), ady = Math.abs(dy);
+            const verticalDominant = ady >= adx * 1.15;
+            const horizontalDominant = adx >= ady * 1.15;
+            if (verticalDominant) {
+                const sY = p1.y + Math.sign(dy) * nodeRadius; const eY = p2.y - Math.sign(dy) * nodeRadius;
+                return { sx: p1.x, sy: sY, ex: p2.x, ey: eY };
+            }
+            if (horizontalDominant) {
+                const sX = p1.x + Math.sign(dx) * nodeRadius; const eX = p2.x - Math.sign(dx) * nodeRadius;
+                return { sx: sX, sy: p1.y, ex: eX, ey: p2.y };
+            }
+            const dist = Math.hypot(dx, dy) || 1; const ux = dx / dist, uy = dy / dist;
+            return { sx: p1.x + ux * nodeRadius, sy: p1.y + uy * nodeRadius, ex: p2.x - ux * nodeRadius, ey: p2.y - uy * nodeRadius };
+        }
+
+        function getEdgesList() {
+            const list = [];
+            for (const [u, neigh] of adjacency.entries()) for (const v of neigh) list.push([u, v]);
+            return list;
+        }
+
+        function buildEdgePairs() {
+            const map = new Map();
+            for (const [u, v] of getEdgesList()) {
+                const a = Math.min(u, v), b = Math.max(u, v), key = `${a}_${b}`;
+                if (!map.has(key)) map.set(key, { a, b, hasAB: false, hasBA: false });
+                const rec = map.get(key);
+                if (u === a && v === b) rec.hasAB = true;
+                if (u === b && v === a) rec.hasBA = true;
+            }
+            return Array.from(map.values()).map(r => {
+                if (r.hasAB && r.hasBA) return { type: 'bi', a: r.a, b: r.b };
+                if (r.hasAB) return { type: 'uni', u: r.a, v: r.b };
+                return { type: 'uni', u: r.b, v: r.a };
+            });
+        }
+
+        function drawEdges() {
+            const pairs = buildEdgePairs();
+            for (const p of pairs) {
+                if (p.type === 'uni') drawSingleDirectedEdge(p.u, p.v);
+                else drawSingleBidirectionalEdge(p.a, p.b);
+            }
+        }
+
+        function drawSingleDirectedEdge(u, v) {
+            const posU = positions.get(u), posV = positions.get(v); if (!posU || !posV) return;
+            const p1 = worldToScreen(posU[0], posU[1]), p2 = worldToScreen(posV[0], posV[1]);
+            const nodeR = Math.max(14, 22 * view.scale);
+            const pts = computeEdgeEndpoints(p1, p2, nodeR);
+            const { sx, sy, ex, ey } = pts;
+            const relatedToOne = (u === 1 || v === 1);
+            if (relatedToOne) {
+                ctx.beginPath(); ctx.strokeStyle = COLORS.edge; ctx.lineWidth = Math.max(1.2, 2 * (view.scale * 0.25));
+                ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+                drawArrowOnLine(sx, sy, ex, ey, Math.max(10, 9 * view.scale), COLORS.arrowFill, COLORS.arrowStroke, false);
+                return;
+            }
+            const mx = (sx + ex) / 2, my = (sy + ey) / 2;
+            const pdx = ex - sx, pdy = ey - sy, pdist = Math.hypot(pdx, pdy) || 1;
+            const perX = -pdy / pdist, perY = pdx / pdist;
+            const base = Math.min(160, pdist * 0.08);
+            const curvatureMag = Math.max(12, base + (Math.abs(p2.y - p1.y) / (Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1)) * 6);
+            const sign = ((u + v) % 2 === 0) ? 1 : -1;
+            const cx = mx + perX * (curvatureMag * sign), cy = my + perY * (curvatureMag * sign);
+            ctx.beginPath(); ctx.strokeStyle = COLORS.edge; ctx.lineWidth = Math.max(1.0, 1.6 * (view.scale * 0.25));
+            ctx.moveTo(sx, sy); ctx.quadraticCurveTo(cx, cy, ex, ey); ctx.stroke();
+            drawArrowOnQuad(sx, sy, cx, cy, ex, ey, 0.88, Math.max(9, 8.5 * view.scale), COLORS.arrowFill, COLORS.arrowStroke, false);
+        }
+
+        function drawSingleBidirectionalEdge(a, b) {
+            const posA = positions.get(a), posB = positions.get(b); if (!posA || !posB) return;
+            const p1 = worldToScreen(posA[0], posA[1]), p2 = worldToScreen(posB[0], posB[1]);
+            const nodeR = Math.max(14, 22 * view.scale);
+            const pts = computeEdgeEndpoints(p1, p2, nodeR);
+            const { sx, sy, ex, ey } = pts;
+            const relatedToOne = (a === 1 || b === 1);
+            if (relatedToOne) {
+                ctx.beginPath(); ctx.strokeStyle = COLORS.edge; ctx.lineWidth = Math.max(1.2, 2 * (view.scale * 0.25));
+                ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+                drawArrowOnLine(sx, sy, ex, ey, Math.max(10, 9 * view.scale), COLORS.arrowFill, COLORS.arrowStroke, false);
+                drawArrowOnLine(ex, ey, sx, sy, Math.max(10, 9 * view.scale), COLORS.arrowFill, COLORS.arrowStroke, false);
+                return;
+            }
+            const mx = (sx + ex) / 2, my = (sy + ey) / 2;
+            const pdx = ex - sx, pdy = ey - sy, pdist = Math.hypot(pdx, pdy) || 1;
+            const perX = -pdy / pdist, perY = pdx / pdist;
+            const base = Math.min(160, pdist * 0.08);
+            const curvatureMag = Math.max(16, base + (Math.abs(a - b) % 5) * 3);
+            const sign = (a > b) ? 1 : -1;
+            const cx = mx + perX * (curvatureMag * sign), cy = my + perY * (curvatureMag * sign);
+            ctx.beginPath(); ctx.strokeStyle = COLORS.edge; ctx.lineWidth = Math.max(1.0, 1.6 * (view.scale * 0.25));
+            ctx.moveTo(sx, sy); ctx.quadraticCurveTo(cx, cy, ex, ey); ctx.stroke();
+            drawArrowOnQuad(sx, sy, cx, cy, ex, ey, 0.78, Math.max(9, 8.5 * view.scale), COLORS.arrowFill, COLORS.arrowStroke, false);
+            drawArrowOnQuad(sx, sy, cx, cy, ex, ey, 0.22, Math.max(9, 8.5 * view.scale), COLORS.arrowFill, COLORS.arrowStroke, true);
+        }
+
+        // ---------- Nodes ----------
+        function drawNodes() {
+            for (const n of NODES) {
+                const pos = positions.get(n); if (!pos) continue;
+                const p = worldToScreen(pos[0], pos[1]); const r = clamp(14, 36, 22 * view.scale);
+                let fill = COLORS.nodeDefault;
+                if (selected.includes(n)) fill = COLORS.blue;
+                else if (activeLayerSet && activeLayerSet.has(n)) fill = COLORS.nodeBfs;
+                else if (visitedGlobal.has(n)) fill = COLORS.nodeVisited;
+                ctx.save();
+                ctx.beginPath();
+                ctx.shadowColor = 'rgba(0,0,0,0.12)'; ctx.shadowBlur = 10; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 6;
+                ctx.fillStyle = fill; ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                ctx.fillStyle = '#031826';
+                const fontSize = Math.max(11, Math.round(12 * view.scale));
+                ctx.font = `bold ${fontSize}px ${getComputedStyle(document.body).fontFamily || 'sans-serif'}`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(String(n), p.x, p.y);
+            }
+        }
+
+        // ---------- Interaction & improved mobile selection (Pointer Events) ----------
+        function findNearestNodeScreen(sx, sy) {
+            let best = null, bestD = Infinity;
+            for (const [n, pos] of positions.entries()) {
+                const p = worldToScreen(pos[0], pos[1]);
+                const d = Math.hypot(sx - p.x, sy - p.y);
+                if (d < bestD && d <= Math.max(20, 34 * view.scale)) { bestD = d; best = n; }
+            }
+            return best;
+        }
+
+        let hoverNode = null;
+        function handlePointerMoveScreen(sx, sy) {
+            const n = findNearestNodeScreen(sx, sy);
+            if (n !== hoverNode) { hoverNode = n; if (hoverNode) showTooltipForNode(hoverNode, sx, sy); else hideTooltip(); }
+            else if (hoverNode) updateTooltipPosition(sx, sy);
+        }
+
+        function showTooltipForNode(n, sx, sy) {
+            tooltip.style.display = 'block';
+            tooltip.textContent = `کاربر ${n} — خروجی: ${adjacency.get(n).size} — ورودی: ${reverseAdj.get(n) ? reverseAdj.get(n).size : 0}`;
+            updateTooltipPosition(sx, sy);
+        }
+        function updateTooltipPosition(sx, sy) {
+            const containerRect = container.getBoundingClientRect();
+            tooltip.style.left = (containerRect.left + sx) + 'px';
+            tooltip.style.top = (containerRect.top + sy - 28) + 'px';
+        }
+        function hideTooltip() { tooltip.style.display = 'none'; }
+
+        // pointer-based interaction variables
+        const pointers = new Map(); // id -> {x,y,type}
+        let isDragging = false;
+        let dragStart = null; // {x,y,tx,ty, id}
+        let pinch = null; // {idA,idB, startDist, startScale, centerWorld}
+        let lastTapTime = 0, lastTapNode = null;
+        const doubleTapThreshold = 350;
+        let longPressTimer = null;
+
+        // pointerdown
+        canvas.addEventListener('pointerdown', ev => {
+            canvas.setPointerCapture(ev.pointerId);
+            const rect = canvas.getBoundingClientRect();
+            const sx = ev.clientX - rect.left, sy = ev.clientY - rect.top;
+            pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY, sx, sy, type: ev.pointerType });
+
+            // update hover/tooltip
+            handlePointerMoveScreen(sx, sy);
+
+            // if two pointers -> start pinch
+            if (pointers.size === 2) {
+                const ids = Array.from(pointers.keys());
+                const A = pointers.get(ids[0]), B = pointers.get(ids[1]);
+                const dx = B.x - A.x, dy = B.y - A.y;
+                const startDist = Math.hypot(dx, dy) || 1;
+                pinch = { idA: ids[0], idB: ids[1], startDist, startScale: view.scale, centerScreen: { x: (A.sx + B.sx) / 2, y: (A.sy + B.sy) / 2 } };
+            } else if (pointers.size === 1) {
+                // possible pan or tap or long-press
+                isDragging = false;
+                dragStart = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, tx: view.tx, ty: view.ty };
+
+                // start long-press detection (only for touch)
+                if (ev.pointerType === 'touch') {
+                    if (longPressTimer) clearTimeout(longPressTimer);
+                    longPressTimer = setTimeout(() => {
+                        // long-press toggles selection on mobile
+                        const node = findNearestNodeScreen(dragStart.x - rect.left, dragStart.y - rect.top);
+                        if (node) { toggleSelectNode(node); renderOnce(); updateInfoPanel(); }
+                        longPressTimer = null;
+                    }, 700);
+                }
+            }
+        }, { passive: true });
+
+        // pointermove
+        canvas.addEventListener('pointermove', ev => {
+            const rect = canvas.getBoundingClientRect();
+            const sx = ev.clientX - rect.left, sy = ev.clientY - rect.top;
+            // update stored pointer
+            if (pointers.has(ev.pointerId)) pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY, sx, sy, type: ev.pointerType });
+
+            if (pinch) {
+                // handle pinch zoom
+                const A = pointers.get(pinch.idA), B = pointers.get(pinch.idB);
+                if (!A || !B) return;
+                const dx = B.x - A.x, dy = B.y - A.y;
+                const dist = Math.hypot(dx, dy) || 1;
+                const factor = dist / pinch.startDist || 1;
+                const newScale = clamp(0.25, 4, pinch.startScale * factor);
+                // keep focal point stable
+                const rect2 = canvas.getBoundingClientRect();
+                const centerScreen = pinch.centerScreen;
+                const worldBefore = screenToWorld(centerScreen.x, centerScreen.y);
+                view.scale = newScale;
+                view.tx = centerScreen.x - view.scale * worldBefore.x;
+                view.ty = centerScreen.y - view.scale * worldBefore.y;
+                renderOnce();
+                // update hover tooltip
+                handlePointerMoveScreen(sx, sy);
+                return;
+            }
+
+            // single-pointer pan
+            if (dragStart && dragStart.id === ev.pointerId) {
+                const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
+                if (!isDragging && Math.hypot(dx, dy) > 6) { // small threshold to avoid accidental move
+                    isDragging = true;
+                    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+                }
+                if (isDragging) {
+                    view.tx = dragStart.tx + dx; view.ty = dragStart.ty + dy;
+                    renderOnce();
+                    handlePointerMoveScreen(sx, sy);
+                } else {
+                    // still possible small move; update tooltip
+                    handlePointerMoveScreen(sx, sy);
+                }
+            } else {
+                // hover update when not dragging
+                handlePointerMoveScreen(sx, sy);
+            }
+        }, { passive: true });
+
+        // pointerup / pointercancel
+        function endPointer(ev) {
+            const rect = canvas.getBoundingClientRect();
+            const sx = ev.clientX - rect.left, sy = ev.clientY - rect.top;
+            const node = findNearestNodeScreen(sx, sy);
+            // if longPress pending, cancel
+            if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+
+            // if no pinch and not dragging => treat as tap
+            if (!pinch && !isDragging) {
+                const now = performance.now();
+                if (node) {
+                    if (now - lastTapTime <= doubleTapThreshold && lastTapNode === node) {
+                        // double-tap: toggle select
+                        toggleSelectNode(node);
+                        lastTapTime = 0; lastTapNode = null;
+                    } else {
+                        // single tap: select (replace) — consistent mobile UX
+                        selected = [node];
+                        lastTapTime = now; lastTapNode = node;
+                        // note: we intentionally don't clear BFS step counter on finish
+                    }
+                    renderOnce(); updateInfoPanel();
+                }
+            }
+
+            // cleanup pinch / drag / pointers
+            if (pinch && (ev.pointerId === pinch.idA || ev.pointerId === pinch.idB)) pinch = null;
+            if (dragStart && ev.pointerId === dragStart.id) { isDragging = false; dragStart = null; }
+            pointers.delete(ev.pointerId);
+            try { canvas.releasePointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
+            handlePointerMoveScreen(sx, sy);
+        }
+
+        canvas.addEventListener('pointerup', endPointer);
+        canvas.addEventListener('pointercancel', endPointer);
+        canvas.addEventListener('pointerout', ev => { /* keep pointer for safety */ });
+        canvas.addEventListener('pointerleave', ev => { /* keep pointer for safety */ });
+
+        // ---------- Traversal (انتشار = BFS) ----------
+        async function startBfsLayered(start) {
+            lastTraversal = 'bfs';
+            const visited = new Set();
+            const queue = [start];
+            let level = 0;
+            while (queue.length) {
+                const layer = Array.from(queue.filter(u => !visited.has(u)));
+                if (!layer.length) break;
+                queue.length = 0;
+                layer.forEach(u => visited.add(u));
+                currentBfsLevel = level + 1;
+                layer.forEach(u => visitedGlobal.add(u));
+                activeLayerSet = new Set(layer);
+                updateInfoPanel(); renderOnce();
+                await new Promise(res => setTimeout(res, 900));
+                activeLayerSet = null; renderOnce(); updateInfoPanel();
+                for (const u of layer) for (const v of adjacency.get(u) || []) if (!visited.has(v)) queue.push(v);
+                level++;
+            }
+            // keep currentBfsLevel as requested (do not reset to 0)
+            updateInfoPanel();
+        }
+
+        // ---------- Delete edge flow ----------
+        function toggleSelectNode(n) {
+            const idx = selected.indexOf(n);
+            if (idx === -1) selected.push(n); else selected.splice(idx, 1);
+        }
+
+        function performDeleteBetweenSelected() {
+            if (selected.length === 2) {
+                const [u, v] = selected;
+                if (adjacency.get(u) && adjacency.get(u).has(v)) {
+                    adjacency.get(u).delete(v);
+                    if (reverseAdj.has(v)) reverseAdj.get(v).delete(u);
+                }
+                selected = []; renderOnce(); updateInfoPanel();
+            } else {
+                alert('برای حذف یال، ابتدا دو کاربر را انتخاب کنید.');
+            }
+        }
+
+        // ---------- Keyboard ----------
+        window.addEventListener('keydown', ev => {
+            const k = (ev.key || '').toLowerCase();
+            if (k === 'enter') {
+                if (selected.length === 2) performDeleteBetweenSelected();
+            } else if (k === 'c') {
+                visitedGlobal.clear(); currentBfsLevel = 0; activeLayerSet = null; renderOnce(); updateInfoPanel();
+            } else if (k === 'a') {
+                if (selected.length > 0) startBfsLayered(selected[0]);
+            }
+        });
+
+        // ---------- Info panel ----------
+        function countWeakComponents() {
+            const seen = new Set(); let cnt = 0;
+            function nbrs(n) { const s = new Set(); for (const v of (adjacency.get(n) || [])) s.add(v); for (const v of (reverseAdj.get(n) || [])) s.add(v); return s; }
+            for (const n of NODES) {
+                if (seen.has(n)) continue;
+                cnt++; const stack = [n];
+                while (stack.length) {
+                    const u = stack.pop();
+                    if (seen.has(u)) continue; seen.add(u);
+                    for (const w of nbrs(u)) if (!seen.has(w)) stack.push(w);
+                }
+            }
+            return cnt;
+        }
+
+        function updateInfoPanel() {
+            infoEls.nodesTotal.textContent = NODES.length;
+            infoEls.componentsCount.textContent = countWeakComponents();
+            infoEls.visitedCount.textContent = visitedGlobal.size;
+            infoEls.currentLevel.textContent = currentBfsLevel;
+            infoEls.selectedList.textContent = selected.length ? selected.join(' • ') : 'هیچ‌کدام';
+        }
+
+        // ---------- UI bindings ----------
+        function bindModalAndControls() {
+            const modalBackdrop = document.getElementById('modalBackdrop');
+            document.getElementById('btnHelp').addEventListener('click', () => { modalBackdrop.classList.add('open'); modalBackdrop.setAttribute('aria-hidden', 'false'); });
+            document.getElementById('modalGotIt').addEventListener('click', () => { modalBackdrop.classList.remove('open'); modalBackdrop.setAttribute('aria-hidden', 'true'); });
+            modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) { modalBackdrop.classList.remove('open'); modalBackdrop.setAttribute('aria-hidden', 'true'); } });
+
+            document.getElementById('btnClear').addEventListener('click', () => {
+                selected = []; visitedGlobal.clear(); currentBfsLevel = 0; activeLayerSet = null; renderOnce(); updateInfoPanel();
+            });
+
+            document.getElementById('btnBfsSel').addEventListener('click', () => {
+                if (selected.length > 0) startBfsLayered(selected[0]);
+                else alert('ابتدا یک کاربر انتخاب کنید.');
+            });
+
+            btnDelete.addEventListener('click', () => {
+                performDeleteBetweenSelected();
+            });
+
+            document.getElementById('btnRedraw').addEventListener('click', () => {
+                initAdjMapsFromList(INITIAL_EDGES);
+                buildReverseAdj();
+                selected = []; visitedGlobal.clear(); currentBfsLevel = 0; activeLayerSet = null; lastTraversal = null;
+                computeLayout(); renderOnce(); updateInfoPanel();
+            });
+        }
+
+        // ---------- Render ----------
+        function drawBackground(rect) {
+            const g = ctx.createLinearGradient(0, 0, rect.width, rect.height);
+            g.addColorStop(0, 'rgba(255,255,255,0.02)'); g.addColorStop(1, 'rgba(2,8,18,0.03)');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, rect.width, rect.height);
+        }
+
+        function renderOnce() {
+            const rect = container.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            drawBackground(rect);
+            drawEdges();
+            drawNodes();
+        }
+
+        // ---------- Init ----------
+        function init() {
+            computeLayout();
+            resizeCanvas();
+            bindModalAndControls();
+            updateInfoPanel();
+            renderOnce();
+            // keep resize and pointer move bindings
+            window.addEventListener('resize', () => { resizeCanvas(); fitWorldToScreen(); renderOnce(); });
+            window.addEventListener('pointermove', ev => { // update global hover when pointer moves outside canvas
+                const rect = canvas.getBoundingClientRect();
+                if (ev.clientX >= rect.left && ev.clientX <= rect.right && ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+                    handlePointerMoveScreen(ev.clientX - rect.left, ev.clientY - rect.top);
+                } else {
+                    hoverNode = null; hideTooltip();
+                }
+            });
+            canvas.setAttribute('tabindex', '0');
+        }
+        init();
+
+        // expose debug (single clean object)
+        window._graph = { adjacency, positions, renderOnce, startBfsLayered: n => startBfsLayered(n), selected, computeLayout };
+
+    </script>
 </body>
 
 </html>
